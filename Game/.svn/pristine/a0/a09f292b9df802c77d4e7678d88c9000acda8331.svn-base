@@ -1,0 +1,73 @@
+package game.server.rmi.interfaces;
+
+import java.util.List;
+
+public interface DatabaseInterface {
+
+	int getInitialPlotCardNum();
+	
+	int getStandardPlotCardsNum();
+	
+	int getPlotTypesNum();
+	
+	int getTotPlotCardsNum();
+	
+	int getRegionPerPlotNum();
+	
+	int getIslandNum();
+	
+	int getRegionNum();
+	
+	int getCityRegionNum();
+	
+	int getEnclosureNum();
+	
+	int getFinalEnclosureNum();
+	
+	int getPositionNum();
+	
+	int getSheepNum();
+	
+	int getSheepBNum();
+	
+	int getSheepValue();
+	
+	int getSheepBValue();
+	
+	int getDinarsTotNum();
+	
+	int getDinarAssignNum();
+	
+	int getDinarAssignVariantNum();
+	
+	int getDiceNum();
+	
+	int getTotShepherdNum();
+	
+	int getTotPlayerMinNumber();
+	
+	int getTotPlayerMaxNumber();
+	
+	int getTotShepherdVariantNumber();
+	
+	int getMaxMovementCount();
+	
+	int getShepherdMovementDinarsCost();
+	
+	int getPlotCardsValueMultiplier();
+	
+	List<String> getShepherdColor();
+	
+	List<String> getPlotTypes();
+	
+	List<String> getCityTypes();
+	
+	List<Integer> getPositionViewerValue();
+	
+	List<int[]> getPositionsPerRegion();
+	
+	List<int[]> getPositionsPerCity();
+	
+	List<int[]> getPositionsAdjacentsMatrix();
+	
+}

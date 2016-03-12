@@ -1,0 +1,136 @@
+package game.server.controller;
+
+import java.io.IOException;
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+
+/**
+ * MAIN LOGGER CLASS
+ * requested (as new object) by all game's classes for a simple file logging
+ *  
+ *  -how to log:
+ *  	CustomLogger.logEx(getClass().getName(), "requestIntInput", "is requested an integer", Level.WARNING, e);
+ *  	CustomLogger.logInfo(getClass().getName(), "doMoveShepherd", "no more dinars: player " + i);
+ *  
+ *  -allowed messages:
+ *    entering(String sourceClass, String sourceMethod);
+ *    exiting (String sourceClass, String sourceMethod);
+ *    config  (String message);
+ *    info    (String message);
+ *    warning (String message);
+ *    severe  (String message);
+ *    throwing(String sourceClass, String sourceMethod, Throwable t);
+ *    see: http://tutorials.jenkov.com/java-logging/logger.html
+ * 
+ * @author Leonardo
+ */
+public class CustomLogger {
+	
+	/**
+	 * LOGGER INITIALIZATION
+	 */
+	//EVENT LOGGER
+	private static Logger LOGGER = Logger.getLogger(CustomLogger.class.getName() + "-event");
+	//GAME HISTORY LOGGER
+	private static Logger LOGGER_HISTORY = Logger.getLogger(CustomLogger.class.getName() + "-history");
+	
+	//file feature init vars
+	private static boolean isFileInit = false;
+	
+	/**
+	 * CONSTRUCTOR
+	 */
+	private static void initializeFileLogFeature(){
+		//call file-write feature
+		/*
+		setFile(LOGGER, "event");
+		setFile(LOGGER_HISTORY, "history");
+		isFileInit = true;
+		*/
+	}
+
+	/**
+	 * Log EXCEPTION method used to write the passed exception
+	 */
+	public static void logEx(String classname, String methodname, String message, Level level, Exception ex) {
+		/*
+		initializeFileLogFeature();
+		LOGGER.entering(classname, methodname);
+		LOGGER.log(level, message, ex); 
+		LOGGER.exiting(classname, methodname);
+		*/
+	}
+	
+	/**
+	 * Log INFO method used to write the passed message
+	 */
+	public static void logInfo(String classname, String methodname, String message) {
+		/*
+		initializeFileLogFeature();
+		//LOGGER.entering(classname, methodname);
+		LOGGER.info(message);
+		LOGGER.exiting(classname, methodname);
+		*/
+	}
+	
+	/**
+	 * Log CONFIG method used to write the passed message
+	 */
+	public static void logConfig(String classname, String methodname, String message) {
+		/*
+		initializeFileLogFeature();
+		//LOGGER.entering(classname, methodname);
+		LOGGER.info("(CONFIG) " + message);
+		LOGGER.exiting(classname, methodname);
+		*/
+	}
+	
+	/**
+	 * Log CONFIG method used to write the passed message
+	 */
+	public static void logConsoleHistory(String classname, String methodname, String message) {
+		/*
+		initializeFileLogFeature();
+		//LOGGER_HISTORY.entering(classname, methodname);
+		LOGGER_HISTORY.info("" + message);
+		LOGGER_HISTORY.exiting(classname, methodname);
+		*/
+	}
+	
+	/**
+	 * Add to console logger the file-write feature
+	 * to remove console handler: logger.setUseParentHandlers(false)
+	 * 
+	 * @param logger
+	 */
+	private static void setFile(Logger logger, String subfol){
+		/*
+		if(!isFileInit){
+			try {
+				FileHandler fh;
+		        fh = new FileHandler("logs/" + subfol + "/" + subfol + "CustomLogger" + ".log");
+		        
+		        logger.addHandler(fh);
+		        
+		        //removing from console
+		        //logger.setUseParentHandlers(false);
+		        
+		        SimpleFormatter formatter = new SimpleFormatter();
+		        fh.setFormatter(formatter);
+		        
+		    }catch(SecurityException e){
+		    	//e.printStackTrace();
+		    	logEx("CustomLogger", "saveToFile", "security exception while logging to file", Level.SEVERE, e);
+		    	
+		    }catch(IOException e){
+		    	//e.printStackTrace();
+		    	logEx("CustomLogger", "saveToFile", "fileIO exception while logging to file", Level.SEVERE, e);
+		    	
+		    }
+		}
+		*/
+	}
+	
+}

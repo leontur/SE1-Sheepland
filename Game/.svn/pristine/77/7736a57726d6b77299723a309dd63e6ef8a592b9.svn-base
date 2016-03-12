@@ -1,0 +1,62 @@
+package game.server.rmi.interfaces;
+
+import game.server.model.Game;
+
+import java.rmi.NotBoundException;
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+import java.util.List;
+
+public interface AddPlayerInterface extends Remote {
+	
+	///////////////////////////////////////////////////////////////////
+	//CLIENT SET
+
+	int getCurrentPlayerNumbers() throws RemoteException;
+	
+	void addNewPlayer() throws RemoteException, NotBoundException, InterruptedException;
+	
+	void setClientView() throws RemoteException, NotBoundException, InterruptedException;
+
+	boolean isRunningGame() throws RemoteException;
+	
+	int getThisGamePlayersNumber() throws RemoteException;
+	
+	void setThisGamePlayersNumber(int newnum) throws RemoteException;
+	
+	int getNewPlayerId() throws RemoteException;
+	
+	void setGameInterface(Game game) throws RemoteException;
+	
+	////////////////////////////////////////////////////////////////////
+	//GUI MANAGE GETTERS
+	
+	List<int[]> getGuiRegionBusy() throws RemoteException;
+	
+	List<List<Integer>> getGuiPlayersShepherdLoc() throws RemoteException;
+	
+	int getGuiPlayerDinar(int player) throws RemoteException;
+	
+	int getGuiPlayerInitialCard(int player) throws RemoteException;
+	
+	List<Integer> getGuiPlayerStandardCards(int player) throws RemoteException;
+	
+	List<Integer> getGuiShepherdLoc() throws RemoteException;
+	
+	int getGuiStandardEnclosures() throws RemoteException;
+	
+	int getGuiFinalEnclosures() throws RemoteException;
+	
+	/*
+	////////////////////////////////////////////////////////////////////
+	//GUI MANAGE SETTERS FOR DONE MOVE
+	
+	void setGuiSheepNewLoc() throws RemoteException;
+	
+	void setGuiBSheepNewLoc() throws RemoteException;
+	
+	void setGuiShepherdNewLoc() throws RemoteException;
+	
+	void setGuiStandardCardBuy() throws RemoteException;
+	*/
+}

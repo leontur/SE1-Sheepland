@@ -1,0 +1,83 @@
+package game.server.rmi;
+
+import java.rmi.AccessException;
+import java.rmi.AlreadyBoundException;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+
+import game.client.rmi.interfaces.ClientConsoleInterface;
+import game.server.model.Game;
+import game.server.rmi.interfaces.*;
+
+/**
+ * RMI MANAGEMENT CLASS
+ * 
+ * 
+ * @author Leonardo
+ *
+ */
+public class ManageRmi {
+	
+	private static final int PORT = 1099;
+	private static boolean sync = false;
+
+	/**
+	 * Set interfaces on the RMI registry for successive client's request
+	 * @param game
+	 * @throws AlreadyBoundException 
+	 * @throws RemoteException 
+	 * @throws AccessException 
+	 */
+	public static void publishInterfaces(AddPlayerInterface addPlayerInterface) throws AccessException, RemoteException, AlreadyBoundException{
+		
+		//open registry
+		Registry registry = LocateRegistry.getRegistry(PORT);
+				
+		//publishing 
+		//PLAYER INIT interface
+		registry.bind("addplayer", addPlayerInterface);
+
+		//debug
+		//show objects
+		//new Game().getGameViewer().showAllObjectsOnRegistry(registry);
+		
+	}
+	
+	
+	/**
+	 * Get view interfaces from RMI clients
+	 * @param gameInterface
+	 * @throws RemoteException
+	 * @throws NotBoundException
+	 * @throws InterruptedException
+	 */
+	public static void requestViewerFromClient(int player, Game game) throws RemoteException, NotBoundException, InterruptedException{
+		
+		//get registry
+		Registry registry = LocateRegistry.getRegistry(PORT);
+		
+		//tag
+		String tagfromclient = "clientconsole" + Integer.toString(player);
+		
+		//get
+		ClientConsoleInterface View1 = (ClientConsoleInterface) registry.lookup(tagfromclient);
+		
+		//set
+		game.addViewerToList(View1);
+		
+	}
+	
+	/**
+	 * SECONDARY METHODS
+	 */
+	
+	public static void setSync(boolean newsync){
+		sync = newsync;
+	}
+	public static boolean isSync(){
+		return sync;
+	}
+	
+}

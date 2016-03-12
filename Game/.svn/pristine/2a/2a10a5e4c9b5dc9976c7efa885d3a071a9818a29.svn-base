@@ -1,0 +1,57 @@
+package game.client.view.gui;
+
+import javax.swing.JLabel;
+
+/**
+ * FATHER CLASS OF A GENERIC INTERACTIVE OBJECT
+ * 
+ * PROPERTIES
+ * 	-view
+ * 	-move
+ * 	-select
+ * 
+ * @author Leonardo
+ *
+ */
+public class InteractiveObject extends JLabel {
+
+	/**
+	 * CLASS SERIAL VERSION ID
+	 */
+	private static final long serialVersionUID = 1L;
+	
+	/**
+	 * CLASS VARS
+	 */
+	private boolean isActiveObject;
+	protected boolean isSelectable = true;
+	protected String dirPath = "./resources/img/";
+	
+	/**
+	 * CLASS CONTSTRUCTOR
+	 */
+	public InteractiveObject(){
+		isActiveObject = true;
+	}
+	
+	/**
+	 * CLASS METHODS
+	 */
+	
+	public boolean isActiveObject(){
+		return this.isActiveObject;
+	}
+	
+	public void setIsActiveObject(boolean status){
+		this.isActiveObject = status;
+	}
+		
+	public void setIsSelectableObject(boolean status){
+		this.isSelectable = status;
+	}
+	
+	public boolean isSelectable(){
+		return isSelectable;
+	}
+	
+}

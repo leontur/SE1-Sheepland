@@ -1,0 +1,80 @@
+package game.server.controller;
+
+import static org.junit.Assert.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import game.server.model.Game;
+import game.server.model.Region;
+import game.server.model.Sheep;
+import game.server.model.Shepherd;
+import game.server.view.Console;
+import game.server.view.ViewerInterface;
+
+import org.junit.Test;
+
+public class MoveSheepTest {
+	
+	public MoveSheep tester = new MoveSheep();
+	public Region reg = new Region();
+
+	/**
+	 * Sheep main movement call
+	 * (manual move - for black and white)
+	 * 
+	 *  -control feasibility
+	 *  -select a sheep
+	 *  -ask to user if ok to move that sheep
+	 *  	-if ok, move
+	 *  	-if not ok, reask
+	 *  		-if finished sheep, notify
+	 */
+	@Test
+	public void moveSheepTest(){
+		
+		Game game = new Game();
+		
+		ViewerInterface mainGameViewer = new Console(game);
+		
+		
+		
+		Shepherd shepherd = new Shepherd(1, "Red");
+		
+		List<Region> allRegions = new ArrayList<Region>();
+		allRegions.add(new Region());
+		
+		MoveSheep.moveSheep(game, shepherd, allRegions, mainGameViewer,true);
+		
+		List<Region> regionAroundShepherd = CheckMove.findRegionsWithSamePos(allRegions, shepherd.getCurrShepherdTarget());
+		regionAroundShepherd.add(new Region(0, new Sheep(), "Hill"));
+		regionAroundShepherd.add(new Region(1, new Sheep(), "Forest"));
+		if(allRegions == regionAroundShepherd){
+			assertTrue(true);
+		}
+		assertTrue(false);
+	}
+	
+	/**
+	 * Control white (manual movement)
+	 */
+	@Test
+	public void selectSheepToMoveTest(){
+		List<Region> regionsAround = new ArrayList<Region>();
+		Region re = new Region();
+		regionsAround.add(re);
+		assertEquals(reg.getAllSheeps().size(), regionsAround);
+	}
+	
+	/**
+	 * Control black (manual movement)
+	 */
+	@Test
+	public void selectSheepToMoveTestA(){
+		List<Region> regionsAround = new ArrayList<Region>();
+		Region re = new Region();
+		regionsAround.add(re);
+		assertEquals(reg.getAllBlackSheeps().size(), regionsAround);
+		}
+}
+	

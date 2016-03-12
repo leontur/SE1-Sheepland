@@ -1,0 +1,152 @@
+package game.client.view.gui;
+
+import game.client.view.gui.model.Dinar;
+import game.client.view.gui.model.Enclosure;
+import game.client.view.gui.model.FinalEnclosure;
+import game.client.view.gui.model.InitialCard;
+import game.client.view.gui.model.Sheep;
+import game.client.view.gui.model.SheepBlack;
+import game.client.view.gui.model.Sheepland;
+import game.client.view.gui.model.Shepherd;
+import game.client.view.gui.model.StandardCard;
+import game.client.view.gui.model.Wolf;
+
+import java.awt.Point;
+import java.util.List;
+
+/**
+ * MOVEMENT AND TURN UPDATE CLASS
+ * SET IN THE MAP 
+ * THE UPDATED POSITION OF ALL OBJECTS
+ * 
+ * @author Leonardo
+ *
+ */
+public class MapUpdate {
+
+	/**
+	 * CLASS VARS
+	 */
+	private static final int animTime = 1000;
+	private static DestinationDatabase ddb = new DestinationDatabase();
+	
+	
+	/**
+	 * UPDATE METHODS
+	 */
+	
+	/**
+	 * Check for new positions and move current sheep to the new one
+	 * @param regionBusy
+	 * @param allSheeps
+	 * @param allBlackSheeps
+	 * @param wolf
+	 * @param sheepland
+	 */
+	public static void updateRegions(List<int[]> regionBusy, List<Sheep> allSheeps, List<SheepBlack> allBlackSheeps, Wolf wolf, Sheepland sheepland){
+		
+		//list index: region id
+		//[0] sheep
+		//[1] bsheep
+		//[2] wolf
+		
+		int i, j;
+		int sheepCount=0, bsheepCount=0;
+		
+		//for each region
+		for(i=0; i<regionBusy.size(); i++){
+			
+			//for each sheep
+			for(j=0; j<regionBusy.get(i)[0]; j++, sheepCount++){
+				allSheeps.get(sheepCount).moveTo(new Point(ddb.getRegionsCenterCoords().get(i)[0], ddb.getRegionsCenterCoords().get(i)[1]), animTime);
+			}
+			
+			//for each black sheep
+			for(j=0; j<regionBusy.get(i)[1]; j++, bsheepCount++){
+				allBlackSheeps.get(bsheepCount).moveTo(new Point(ddb.getRegionsCenterCoords().get(i)[0], ddb.getRegionsCenterCoords().get(i)[1]), animTime);
+			}
+			
+			//if wolf
+			if(regionBusy.get(i)[2]!=0){
+				wolf.moveTo(new Point(ddb.getRegionsCenterCoords().get(i)[0], ddb.getRegionsCenterCoords().get(i)[1]), animTime);
+			}
+
+		}
+		
+		//check if wolf ate sheep
+		if(sheepCount<allSheeps.size()){
+			//hide last
+			sheepland.remove(allSheeps.get(allSheeps.size()-1));
+			//remove last
+			allSheeps.remove(allSheeps.size()-1);
+		}
+		
+	}
+	
+	/**
+	 * Check for new positions and move shepherds in new one
+	 * @param playerShepherdPos
+	 * @param allShepherds
+	 * @param sheepland
+	 */
+	public static void updateSheperds(List<List<Integer>> playerShepherdPos, List<Shepherd> allShepherds, Sheepland sheepland){
+		
+		//main list index: player id
+			//inside list: each entry is a new shepherd position 
+			//(cover bough cases of 2 or many players)
+		
+		int i, j;
+		int shepherdCount=0;
+		
+		//for each player
+		for(i=0; i<playerShepherdPos.size(); i++){
+			//for each shepherd
+			for(j=0; j<playerShepherdPos.get(i).size(); j++, shepherdCount++){
+				
+				allShepherds.get(shepherdCount).moveTo(new Point(
+						//x
+						ddb.getPositionsCenterCoords().get(
+								//get updated pos
+								playerShepherdPos.get(i).get(j)
+								)[0], 
+						//y
+						ddb.getRegionsCenterCoords().get(
+								//get updated pos
+								playerShepherdPos.get(i).get(j)
+								)[1]),
+						//time
+						animTime
+						);
+			}
+		}
+	}
+	
+	/**
+	 * Set new image for counters of dinars
+	 * @param playerDinars
+	 * @param allDinars
+	 * @param sheepland
+	 */
+	public static void updateDinars(int playerDinars, Dinar dinar, Sheepland sheepland){
+		
+	}
+	
+	public static void updateInitialCards(int playerInitialCard, List<InitialCard> allInitialCards, Sheepland sheepland){
+		
+	}
+	
+	public static void updateStandardCards(List<Integer> playerStandardCard, List<StandardCard> allStandardCards, Sheepland sheepland){
+		
+	}
+	
+	public static void updateStandardEnclosures(int standardEnclosures, List<Enclosure> allEnclosures, Sheepland sheepland){
+		
+	}
+	
+	public static void updateFinalEnclosures(int finalEnclosures, List<FinalEnclosure> allFinalEnclosures, Sheepland sheepland){
+		
+	}
+
+	
+	
+}

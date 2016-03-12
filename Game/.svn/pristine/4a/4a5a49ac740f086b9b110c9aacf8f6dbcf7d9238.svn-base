@@ -1,0 +1,736 @@
+package game.client.view.gui.model;
+
+import game.client.view.gui.DestinationDatabase;
+import game.client.view.gui.FrameObject;
+import game.client.view.gui.MapUpdate;
+import game.client.view.gui.MovementsController;
+import game.server.model.Database;
+import game.server.rmi.interfaces.DatabaseInterface;
+
+import java.awt.Cursor;
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.Toolkit;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JLayeredPane;
+
+/**
+ * MAIN WINDOWS GAME AND MAP
+ * OBJECT CLASS
+ * 
+ * @author Leonardo
+ */
+public class Sheepland extends FrameObject {
+	
+	/**
+	 * CLASS SERIAL VERSION ID
+	 */
+	private static final long serialVersionUID = 1L;
+	
+	/**
+	 * CLASS VARS
+	 */
+	//window dimensions
+	private static final int WINDOW_WIDTH = 906;
+	private static final int WINDOW_HEIGHT = 704;
+	
+	//window definition
+	private Image backgroundImg;
+	private JLabel backgroundLbl;
+	private JLayeredPane layeredPane;
+	
+	//assets
+	protected JLabel gif1, gif3, gif3a, gif4, gif5, gif6;
+	protected JLabel num1, num2, num3, num4, num5, num6, numDice, numPlayer;
+	protected List<Image> numbers = new ArrayList<Image>();
+	protected JLabel moveDo, moveWait, playerN;
+	
+	//layers definition (z index) | note: overrides in population methods
+	private final int BACKGROUND_Z_INDEX = 1;
+	private final int OBJECTS_Z_INDEX = 10;
+	
+	//shift for pawn initial paint
+	private int shiftX = 25;
+	private int shiftY = shiftX;
+	
+	//big image
+	private int bigX = 50;
+	private int bigY = bigX;
+	
+	//number scale
+	private int numX = 28;
+	private int numY = 40;
+	
+	//class import declaration
+	private MovementsController movementsController;
+		
+	//DBs declaration
+	private static DatabaseInterface db = new Database();
+	private static DestinationDatabase ddb = new DestinationDatabase();
+	
+	//objects declaration
+	private List<Sheep> allSheeps;
+	private List<SheepBlack> allBlackSheeps;
+	private List<Shepherd> allShepherds;
+	private List<Enclosure> allEnclosures;
+	private List<FinalEnclosure> allFinalEnclosures;
+	private List<InitialCard> allInitialCards;
+	private List<StandardCard> allStandardCards;
+	private Dinar dinar;
+	private Wolf wolf;
+	private Dice dice;
+	
+	//complete objects list
+	private List<Object> allObjList;
+	
+	//game vars declaration (on creation is true)
+	private boolean isRunningGame = true;
+	private List<int[]> regionBusy = new ArrayList<int[]>();
+	private List<Integer> positionBusy = new ArrayList<Integer>();
+	private List<List<Integer>> playerShepherdPos = new ArrayList<List<Integer>>();
+	private int playerDinars;
+	private int playerInitialCard;
+	private List<List<String>> playerStandardCard;
+	private int standardEnclosures;
+	private int finalEnclosures;
+	private int diceNum;
+	private int playerNumber;
+	
+	/**
+	 * CLASS CONSTRUCTOR
+	 */
+	public Sheepland() {
+		
+		//SET
+		//window properties
+		setResizable(false);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setTitle("Sheepland | Group 14 | Turchi - Rosolia");
+		setSize(WINDOW_WIDTH, WINDOW_HEIGHT + getInsets().top);
+		
+		//LOAD ASSETS
+		loadAssets();
+		
+		//INIT OBJECTS
+		initObjects();
+		
+		//INIT WINDOW
+		initComponents();
+		
+	}
+
+	//LOAD ASSETS
+	private void loadAssets(){
+		try{
+			backgroundImg = ImageIO.read(new File(dirPath + "game_board.png"));
+		}catch(IOException e){
+			//e.printStackTrace();
+			Thread.currentThread().interrupt();
+		}
+	}
+	
+	//INIT OBJECTS
+	private void initObjects() {
+		allSheeps = new ArrayList<Sheep>();
+		allBlackSheeps = new ArrayList<SheepBlack>();
+		allShepherds = new ArrayList<Shepherd>();
+		allEnclosures = new ArrayList<Enclosure>();
+		allFinalEnclosures = new ArrayList<FinalEnclosure>();
+		allInitialCards = new ArrayList<InitialCard>();
+		allStandardCards = new ArrayList<StandardCard>();
+		dinar = new Dinar();
+		wolf = new Wolf();
+		dice = new Dice();
+		allObjList = new ArrayList<Object>();
+	}
+	
+	//SAVE OBJ
+	public void saveObjects() {
+		//set all movable objects to a list
+		//for movements controller
+		allObjList.addAll(allSheeps);
+		allObjList.addAll(allBlackSheeps);
+		allObjList.addAll(allShepherds);
+		allObjList.add(wolf);
+	}
+	
+	//INIT WINDOW
+	private void initComponents() {
+		
+		//content pane
+		layeredPane = new JLayeredPane();
+		setContentPane(layeredPane);
+		
+		//layer pane
+		//background image
+		backgroundLbl = new JLabel(new ImageIcon(backgroundImg));
+		backgroundLbl.setBounds(0, 0, 900, 675);
+		add(backgroundLbl);
+		layeredPane.setLayer(backgroundLbl, BACKGROUND_Z_INDEX - 10);
+		
+		//add gifs
+		addGifToGame();
+		
+		//add numbers
+		addNumbersToGame();
+		
+		//add dashboard
+		addDashboardAssets();
+		
+		//set cursor
+		Toolkit toolkit = Toolkit.getDefaultToolkit();
+		Image image = toolkit.getImage(dirPath + "cursor.png");
+		image = image.getScaledInstance(30, 30, Image.SCALE_AREA_AVERAGING);
+		Cursor c = toolkit.createCustomCursor(image, new Point(getX(), getY()), "Cursor");
+		layeredPane.setCursor(c);
+		//int cursorType = Cursor.CROSSHAIR_CURSOR;
+		//layeredPane.setCursor(Cursor.getPredefinedCursor(cursorType));
+		//layeredPane.setVisible(cursorType != Cursor.DEFAULT_CURSOR);
+		
+		/*
+		//TEST CODE for a new sheep
+		Sheep sh = new Sheep();
+		add(sh);
+		allSheeps.add(sh);
+		layeredPane.setLayer(sh, OBJECTS_Z_INDEX);
+		sh.setLocation(340, 240);
+		sh.moveTo(new Point(200,600),3000);
+		*/
+		
+		//MOVEMENTS CONTROLLER INIT
+		movementsController = new MovementsController(allObjList);
+		//mouse listener
+		layeredPane.addMouseListener(movementsController);
+		
+	}
+	
+	/**
+	 * Add gif to the game board main window
+	 */
+	private void addGifToGame(){
+		try{
+			
+			//import
+			Image image1 = Toolkit.getDefaultToolkit().createImage(dirPathGif + "bird.gif");
+			Image image3 = Toolkit.getDefaultToolkit().createImage(dirPathGif + "dolphin.gif");
+			Image image4 = Toolkit.getDefaultToolkit().createImage(dirPathGif + "ship.gif");
+			
+			//image set
+			gif1 = new JLabel(new ImageIcon(image1));
+			gif3 = new JLabel(new ImageIcon(image3));
+			gif3a = new JLabel(new ImageIcon(image3));
+			gif4 = new JLabel(new ImageIcon(image4));
+			
+						
+			//bounds
+			gif1.setBounds(0, 0, 300, 150); //bird
+			gif3.setBounds(0, 0, 80, 80); //dolphin
+			gif3a.setBounds(0, 0, 80, 80); //dolphin (up)
+			gif4.setBounds(0, 0, 150, 150); //ship
+			
+			//location
+			gif1.setLocation(800,15);
+			gif3.setLocation(680,585);
+			gif3a.setLocation(440,35);
+			gif4.setLocation(400,540);
+			
+			
+			//frame add
+			add(gif1);
+			add(gif3);
+			add(gif3a);
+			add(gif4);
+			
+			//layer set
+			layeredPane.setLayer(gif1, BACKGROUND_Z_INDEX + 20);
+			layeredPane.setLayer(gif3, BACKGROUND_Z_INDEX - 5);
+			layeredPane.setLayer(gif3a, BACKGROUND_Z_INDEX + 20);
+			layeredPane.setLayer(gif4, BACKGROUND_Z_INDEX + 20);
+			
+		}catch (Exception e){
+			//do nothing (gifs are not important)
+			//e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Movement (async-call) setter for gif
+	 */
+	public void setGifMovement(String member, boolean forX){
+		
+		if(member.equals("gif1")){
+
+			//check if out of screen
+			if(gif1.getLocation().getX()>WINDOW_WIDTH+150 || gif1.getLocation().getY()<-150){
+				//reset inside screen
+				gif1.setLocation(-450, 650);
+			}
+			gif1.setLocation((int)gif1.getLocation().getX()+1, (int)(gif1.getLocation().getY()-0.2));
+		}
+		
+		if(member.equals("gif3a")){
+
+			//check if out of screen
+			if(gif3a.getLocation().getX()>WINDOW_WIDTH+150 || gif3a.getLocation().getY()<-250){
+				//reset inside screen
+				gif3a.setLocation(-450, 450);
+			}
+			gif3a.setLocation((int)(gif3a.getLocation().getX()+1.7), (int)(gif3a.getLocation().getY()-0.02));
+		}
+		
+		if(member.equals("gif4")){
+			
+			if(forX){
+				//check if out of screen
+				if(gif4.getLocation().getX()<0-150){
+					//reset inside screen
+					gif4.setLocation(WINDOW_WIDTH, (int)gif4.getLocation().getY());
+				}
+				gif4.setLocation((int)gif4.getLocation().getX()-1, (int)gif4.getLocation().getY());
+			}else{
+				//check if out of screen
+				if(gif4.getLocation().getX()<0){
+					//reset inside screen
+					gif4.setLocation((int)gif4.getLocation().getX(), WINDOW_HEIGHT);
+				}
+				gif4.setLocation((int)gif4.getLocation().getX(), (int)gif4.getLocation().getY()-1);
+			}
+		}
+		
+	}
+	
+	/**
+	 * Add number counters in the dashboard
+	 */
+	private void addNumbersToGame(){
+		try{
+			
+			//Numbers 0-9 assets | list creation
+			for(int i=0; i<10; i++){				
+				//import
+				Image tmp = Toolkit.getDefaultToolkit().createImage(dirPathNum + Integer.toString(i) + ".png");
+				//scaling
+				tmp = tmp.getScaledInstance(numX, numY, Image.SCALE_AREA_AVERAGING);
+				//add
+				numbers.add(tmp);
+			}
+						
+			//image set
+			num1 = new JLabel(new ImageIcon(numbers.get(0)));
+			num2 = new JLabel(new ImageIcon(numbers.get(0)));
+			num3 = new JLabel(new ImageIcon(numbers.get(0)));
+			num4 = new JLabel(new ImageIcon(numbers.get(0)));
+			num5 = new JLabel(new ImageIcon(numbers.get(0)));
+			num6 = new JLabel(new ImageIcon(numbers.get(0)));
+			numDice = new JLabel(new ImageIcon(numbers.get(0)));
+			numPlayer = new JLabel(new ImageIcon(numbers.get(0)));
+					
+			//bounds
+			num1.setBounds(0, 0, numX, numY);
+			num2.setBounds(0, 0, numX, numY);
+			num3.setBounds(0, 0, numX, numY);
+			num4.setBounds(0, 0, numX, numY);
+			num5.setBounds(0, 0, numX, numY);
+			num6.setBounds(0, 0, numX, numY);
+			numDice.setBounds(0, 0, numX, numY);
+			numPlayer.setBounds(0, 0, numX, numY);
+			
+			//location
+			num1.setLocation(ddb.getDashboardDestination().get(9)[0],ddb.getDashboardDestination().get(9)[1]);		//dinar
+			num2.setLocation(ddb.getDashboardDestination().get(10)[0],ddb.getDashboardDestination().get(10)[1]);	//dinar
+			num3.setLocation(ddb.getDashboardDestination().get(11)[0],ddb.getDashboardDestination().get(11)[1]);	//enclos
+			num4.setLocation(ddb.getDashboardDestination().get(12)[0],ddb.getDashboardDestination().get(12)[1]);	//enclos
+			num5.setLocation(ddb.getDashboardDestination().get(13)[0],ddb.getDashboardDestination().get(13)[1]);	//fin enclos
+			num6.setLocation(ddb.getDashboardDestination().get(14)[0],ddb.getDashboardDestination().get(14)[1]);	//fin enclos
+			numDice.setLocation(ddb.getDashboardDestination().get(15)[0],ddb.getDashboardDestination().get(15)[1]);	//dice
+			numPlayer.setLocation(ddb.getDashboardDestination().get(19)[0],ddb.getDashboardDestination().get(19)[1]);//player
+			
+			//frame add
+			add(num1);
+			add(num2);
+			add(num3);
+			add(num4);
+			add(num5);
+			add(num6);
+			add(numDice);
+			add(numPlayer);
+			
+			//layer set
+			layeredPane.setLayer(num1, BACKGROUND_Z_INDEX - 5);
+			layeredPane.setLayer(num2, BACKGROUND_Z_INDEX - 5);
+			layeredPane.setLayer(num3, BACKGROUND_Z_INDEX - 5);
+			layeredPane.setLayer(num4, BACKGROUND_Z_INDEX - 5);
+			layeredPane.setLayer(num5, BACKGROUND_Z_INDEX - 5);
+			layeredPane.setLayer(num6, BACKGROUND_Z_INDEX - 5);
+			layeredPane.setLayer(numDice, BACKGROUND_Z_INDEX - 5);
+			layeredPane.setLayer(numPlayer, BACKGROUND_Z_INDEX - 5);
+						
+		}catch (Exception e){
+			//e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Add dashboard images (enclosures, and alarms) to map
+	 */
+	private void addDashboardAssets(){
+		try{
+			//import
+			Image imageEnc = Toolkit.getDefaultToolkit().createImage(dirPath + "enclosure.png");
+			Image imageEncFin = Toolkit.getDefaultToolkit().createImage(dirPath + "finalenclosure.png");
+			Image imgmoveDo = Toolkit.getDefaultToolkit().createImage(dirPath + "movedashboard.png");
+			Image imgmoveWait = Toolkit.getDefaultToolkit().createImage(dirPath + "pleasewait.png");
+			Image playerNum = Toolkit.getDefaultToolkit().createImage(dirPath + "playernumber.png");
+			
+			//scaling
+			imageEnc = imageEnc.getScaledInstance(bigX, bigY, Image.SCALE_AREA_AVERAGING);
+			imageEncFin = imageEncFin.getScaledInstance(bigX, bigY, Image.SCALE_AREA_AVERAGING);
+			
+			//label
+			gif5 = new JLabel(new ImageIcon(imageEnc));
+			gif6 = new JLabel(new ImageIcon(imageEncFin));
+			moveDo = new JLabel(new ImageIcon(imgmoveDo));
+			moveWait = new JLabel(new ImageIcon(imgmoveWait));
+			playerN  = new JLabel(new ImageIcon(playerNum));
+			
+			//bounds
+			gif5.setBounds(0, 0, bigX, bigY); //enclosure big
+			gif6.setBounds(0, 0, bigX, bigY); //final enclosure big
+			moveDo.setBounds(0, 0, 401, 218);
+			moveWait.setBounds(0, 0, 391, 101);
+			playerN.setBounds(0, 0, 296, 58);
+			
+			//location
+			gif5.setLocation(ddb.getDashboardDestination().get(7)[0],ddb.getDashboardDestination().get(7)[1]);
+			gif6.setLocation(ddb.getDashboardDestination().get(8)[0],ddb.getDashboardDestination().get(8)[1]);
+			moveDo.setLocation(ddb.getDashboardDestination().get(16)[0],ddb.getDashboardDestination().get(16)[1]);
+			moveWait.setLocation(ddb.getDashboardDestination().get(17)[0],ddb.getDashboardDestination().get(17)[1]);
+			playerN.setLocation(ddb.getDashboardDestination().get(18)[0],ddb.getDashboardDestination().get(18)[1]);
+			
+			//add
+			add(gif5);
+			add(gif6);
+			add(moveDo);
+			add(moveWait);
+			add(playerN);
+			
+			//set
+			layeredPane.setLayer(gif5, BACKGROUND_Z_INDEX - 5);
+			layeredPane.setLayer(gif6, BACKGROUND_Z_INDEX - 5);
+			layeredPane.setLayer(moveDo, BACKGROUND_Z_INDEX - 5);
+			layeredPane.setLayer(moveWait, BACKGROUND_Z_INDEX - 5);
+			layeredPane.setLayer(playerN, BACKGROUND_Z_INDEX - 8);
+			
+		}catch(Exception e){
+			//TODO
+		}
+	}
+	
+	/**
+	 * MAIN INITIALIZATION OF ALL OBJECTS
+	 * INIT AND DISPOSE IN MAP
+	 */
+	public void populateAll(){
+		
+		//sheeps
+		populateSheeps(db.getSheepNum());
+		//black sheeps
+		populateBSheeps(db.getSheepBNum());
+		//shepherds
+		populateShepherds(db.getTotPlayerMaxNumber());
+		//enclosures
+		populateEnclosures(db.getEnclosureNum());
+		//final enclosures
+		populateFinalEnclosures(db.getFinalEnclosureNum());
+		//initial card
+		populateInitialCards(db.getInitialPlotCardNum());
+		//standard card
+		populateStandardCards(db.getStandardPlotCardsNum());
+		//dinars
+		populateDinars();
+		//wolf
+		populateWolf();
+		//dice
+		populateDice();
+		
+		//SAVE ALL LIST
+		saveObjects();
+	}
+	
+	private void populateSheeps(int num) {
+		for(int i=0; i<num; i++){
+			//create
+			Sheep sh = new Sheep(i);
+			
+			//add to container
+			add(sh);
+			
+			//add layer to pane
+			layeredPane.setLayer(sh, OBJECTS_Z_INDEX);
+			
+			//set position
+			sh.setLocation(ddb.getRegionsCenterCoords().get(i)[0]-shiftX, ddb.getRegionsCenterCoords().get(i)[1]-shiftY);
+			
+			//add to the main list
+			allSheeps.add(sh);
+		}
+	}
+	
+	private void populateBSheeps(int num) {
+		for(int i=0; i<num; i++){
+			//create
+			SheepBlack sh = new SheepBlack(i);
+			
+			//add to container
+			add(sh);
+			
+			//add layer to pane
+			layeredPane.setLayer(sh, OBJECTS_Z_INDEX + 5);
+			
+			//set position (last region)
+			sh.setLocation(
+					ddb.getRegionsCenterCoords().get(
+							ddb.getRegionsCenterCoords().size()-1)[0]-shiftX+15, 
+					ddb.getRegionsCenterCoords().get(
+							ddb.getRegionsCenterCoords().size()-1)[1]-shiftY
+					);
+			
+			//add to the main list
+			allBlackSheeps.add(sh);
+		}
+	}
+	
+	private void populateShepherds(int num) {
+		for(int i=0; i<num; i++){
+			//create
+			Shepherd sh = new Shepherd(i);
+			
+			//add to container
+			add(sh);
+			
+			//add layer to pane
+			layeredPane.setLayer(sh, OBJECTS_Z_INDEX + 15);
+			
+			//set position 
+			sh.setLocation(
+					ddb.getDashboardDestination().get(0)[0]-shiftX + i*40,
+					ddb.getDashboardDestination().get(0)[1]-shiftY
+							);
+			
+			//add to the main list
+			allShepherds.add(sh);
+		}
+	}
+	
+	private void populateEnclosures(int num) {
+		for(int i=0; i<num; i++){
+			//create
+			Enclosure sh = new Enclosure(i);
+			
+			//add to container
+			add(sh);
+			
+			//add layer to pane
+			layeredPane.setLayer(sh, OBJECTS_Z_INDEX + 10);
+			
+			//set position 
+			sh.setLocation(
+					ddb.getDashboardDestination().get(2)[0],
+					ddb.getDashboardDestination().get(2)[1]
+							);
+			
+			//add to the main list
+			allEnclosures.add(sh);
+		}
+	}
+	
+	private void populateFinalEnclosures(int num) {
+		for(int i=0; i<num; i++){
+			//create
+			FinalEnclosure sh = new FinalEnclosure(i);
+			
+			//add to container
+			add(sh);
+			
+			//add layer to pane
+			layeredPane.setLayer(sh, OBJECTS_Z_INDEX + 10);
+			
+			//set position 
+			sh.setLocation(
+					ddb.getDashboardDestination().get(3)[0], 
+					ddb.getDashboardDestination().get(3)[1]
+							);
+			
+			//add to the main list
+			allFinalEnclosures.add(sh);
+		}
+	}
+	
+	private void populateInitialCards(int num) {
+		for(int k=0; k<db.getPlotTypes().size(); k++){
+			for(int i=0; i<num; i++){
+				//create
+				InitialCard sh = new InitialCard(i, db.getPlotTypes().get(k));
+				
+				//add to container
+				add(sh);
+				
+				//add layer to pane
+				layeredPane.setLayer(sh, OBJECTS_Z_INDEX + 10);
+		
+				//set position 
+				sh.setLocation(
+						ddb.getDashboardDestination().get(4)[0] + (k*60), 
+						ddb.getDashboardDestination().get(4)[1]
+						);
+				
+				//add to the main list
+				allInitialCards.add(sh);
+			}
+		}
+	}
+	
+	private void populateStandardCards(int num) {
+		for(int k=0; k<db.getPlotTypes().size(); k++){
+			for(int i=0; i<num; i++){
+				//create
+				StandardCard sc = new StandardCard(i, db.getPlotTypes().get(k));
+				
+				//add to container
+				add(sc);
+				
+				//add layer to pane
+				layeredPane.setLayer(sc, OBJECTS_Z_INDEX + 10);
+				
+				//set position 
+				sc.setLocation(
+						ddb.getDashboardDestination().get(5)[0] + (k*60),
+						ddb.getDashboardDestination().get(5)[1]
+						);
+				
+				//add to the main list
+				allStandardCards.add(sc);
+			}
+		}
+	}
+
+	private void populateDinars() {
+		
+			//add to container
+			add(dinar);
+			
+			//add layer to pane
+			layeredPane.setLayer(dinar, OBJECTS_Z_INDEX + 10);
+			
+			//set position 
+			dinar.setLocation(
+					ddb.getDashboardDestination().get(1)[0], 
+					ddb.getDashboardDestination().get(1)[1]
+					);
+	}
+	
+	private void populateWolf() {
+		//add to container
+		add(wolf);
+		
+		//add layer to pane
+		layeredPane.setLayer(wolf, OBJECTS_Z_INDEX + 5);
+		
+		//set position (last region)
+		wolf.setLocation(
+				ddb.getRegionsCenterCoords().get(
+						ddb.getRegionsCenterCoords().size()-1)[0]-shiftX-10, 
+				ddb.getRegionsCenterCoords().get(
+						ddb.getRegionsCenterCoords().size()-1)[1]-shiftY
+				);
+	}
+	
+	private void populateDice() {
+		//add to container
+		add(dice);
+		
+		//add layer to pane
+		layeredPane.setLayer(dice, OBJECTS_Z_INDEX + 5);
+		
+		//set position (last region)
+		dice.setLocation(ddb.getDashboardDestination().get(6)[0], ddb.getDashboardDestination().get(6)[1]);
+	}
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//GETTERS AND SETTERS 
+	//FOR GAME VARS
+	
+	public void setIsRunningGame(boolean newstatus){
+		isRunningGame = newstatus;
+	}
+	public boolean isRunningGame(){
+		return isRunningGame;
+	}
+	
+	public void updateRegionBusy(List<int[]> newlist){
+		regionBusy = newlist;
+	}
+	public void updatePlayerShepherdPos(List<List<Integer>> newlist){
+		playerShepherdPos = newlist;
+	}
+	public void updatePlayerDinars(int i){
+		playerDinars = i;
+	}
+	public void updatePlayerInitialCard(int i){
+		playerInitialCard = i;
+	}
+	public void updatePlayerStandardCard(List<List<String>> newlist){
+		playerStandardCard = newlist;
+	}
+	public void updateStandardEnclosure(int i){
+		standardEnclosures = i;
+	}
+	public void updateFinalEnclosure(int i){
+		finalEnclosures = i;
+	}
+	public void updateDiceNum(int i){
+		diceNum = i;
+	}
+	public void updatePositionBusy(List<Integer> newlist){
+		positionBusy = newlist;
+	}
+	public void updatePlayerNumber(int i){
+		playerNumber = i;
+	}
+	
+	/////////////////////////////////////////////////////////////////////////////////////////
+	//UPDATE MAP
+	
+	/**
+	 * This method is called after all the gui vars update from server. 
+	 * Check all the pawn and move these in the map to the new position or status.
+	 */
+	public void performUpdate(){
+    			
+    	MapUpdate.updateRegions(regionBusy, allSheeps, allBlackSheeps, wolf, this);
+    	MapUpdate.updateSheperds(playerShepherdPos, allShepherds, this);
+    	MapUpdate.updateDinars(playerDinars, num1, num2, numbers, this);
+    	MapUpdate.updateInitialCards(playerInitialCard, allInitialCards, this);
+    	MapUpdate.updateStandardCards(playerStandardCard, allStandardCards, this);
+    	MapUpdate.updateStandardEnclosures(standardEnclosures, num3, num4, numbers, this);
+    	MapUpdate.updateFinalEnclosures(finalEnclosures, num5, num6, numbers, this);
+    	MapUpdate.updatePositions(positionBusy, allEnclosures, allFinalEnclosures, this);
+    	MapUpdate.updatePlayerNumber(playerNumber, numPlayer, numbers);
+    	
+    	//System.out.println("Update request");
+//TODO  	
+//RIPRENDERE DA AGGIORNAMENTO DADO
+//POI FARE INVIO MOSSE DA GRAFICA
+    	
+    	
+	}
+	
+}

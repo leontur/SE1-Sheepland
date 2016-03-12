@@ -1,0 +1,100 @@
+package game.server.controller;
+
+import java.rmi.RemoteException;
+
+import game.server.rmi.ManageRmi;
+import game.server.rmi.StartRmi;
+import game.server.rmi.WaitPlayer;
+import game.server.socket.StartSocket;
+
+/**
+ * GENERIC ASYNCRONOUS TIMER 
+ * RETURN TRUE IF PASSED TIME HAS ELAPSED
+ * @author Leonardo
+ */
+public class AsyncTimer extends Thread {
+	
+	/**
+	 * Sequential execution
+	 * @param timeout
+	 * @return
+	 */
+	public boolean returnOnTimeout(int timeout){
+		try {
+			//waiting
+			Thread.sleep(timeout);
+			return true;	
+		} catch (Exception e) {
+			CustomLogger.logInfoEx("AsyncTimer", "returnOnTimeout", "cannot return", e);
+		}
+		return false;
+	}
+	
+	/**
+	 * Async execution
+	 * @param time
+	 * @return
+	 * @throws InterruptedException
+	 */
+	public void asyncServiceTimeout(final int time, final String classname) throws InterruptedException{
+    	
+		//task used to create a thread
+        Runnable task = new Runnable() {
+            public void run() {
+                try {
+                	//call engine
+                	longRunning(time, classname);
+                } catch (Exception e) {
+                	CustomLogger.logInfoEx("AsyncTimer", "asyncServiceTimeout", "cannot set async", e);
+                }
+            }
+        };
+        
+        //run task in new thread
+        Thread counter = new Thread(task);
+        counter.start();
+    }
+	
+	/**
+	 * Load running
+	 * @param time
+	 * @param classname
+	 * @throws InterruptedException
+	 * @throws ClassNotFoundException
+	 * @throws RemoteException
+	 */
+    //ENGINE
+    private void longRunning(int time, String classname) throws InterruptedException, ClassNotFoundException, RemoteException{
+        
+    	//System.err.println("Thread timer started");
+        Thread.sleep(time);
+        
+        //SCALABLE CASES (else if..)
+        //SET TO THE SELECTED CLASS A NEW VALUE FOR THE LOCAL SYNC VAR (that interrupt the wile)
+        if("WaitPlayerRmi".equals(classname)){
+        	WaitPlayer.setSync(true);
+        	
+        }else if("TurnManage".equals(classname)){
+        	TurnManage.setSync(true);
+        	
+        }else if("GameManage".equals(classname)){
+        	GameManage.setSync(true);
+        	
+        }else if("ManageRmi".equals(classname)){
+        	ManageRmi.setSync(true);
+        	
+        }else if("StartRmi".equals(classname)){
+        	StartRmi.setWaitForPlayerFalse();
+        	
+        }else if("StartSocket".equals(classname)){
+        	StartSocket.setWaitForPlayerFalse();
+        	
+        }else if("WaitPlayerSocket".equals(classname)){
+            game.server.socket.WaitPlayer.setSync(true);
+            	
+        }else if("ManageSocket".equals(classname)){
+        	game.server.socket.ManageSocket.setSync(true);
+    	}
+    }
+    
+}

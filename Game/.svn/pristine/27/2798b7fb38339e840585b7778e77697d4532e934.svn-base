@@ -1,0 +1,239 @@
+package game.server.controller;
+
+import static org.junit.Assert.*;
+import game.server.controller.MoveBlackSheep;
+import game.server.controller.MoveCards;
+import game.server.controller.MoveSheep;
+import game.server.controller.MoveShepherd;
+import game.server.controller.MoveWolf;
+
+import org.junit.Before;
+import org.junit.Test;
+
+/**
+ * MAIN GAME CONTROLLER FOR TURN AND MOVE 
+ * @author Dario
+ *
+ */
+
+/*public class TurnControllerTest {
+	
+	//CLASS VARS
+	public TurnController tester;
+    //METHODS VARS
+	public static MoveSheep mvSheep = new MoveSheep();
+	public static MoveBlackSheep mvBSheep = new MoveBlackSheep();
+	public static MoveShepherd mvShepherd = new MoveShepherd();
+	public static MoveCards mvCards = new MoveCards();
+	public static MoveWolf mvWolf = new MoveWolf();
+	
+	@Test
+	public void startGameTurnTest(){
+		
+	}
+	
+	
+	
+	
+	@Before
+	public void setShepherdBeenMovedTest(){
+		TurnController.setShepherdBeenMoved(true);
+	}
+	
+	@Test
+	public void isShepherdBeenMovedTest() {
+		assertTrue(TurnController.isShepherdBeenMoved());
+	}
+	
+	@Before
+	public void setFieldBeenBoughtTest(){
+		TurnController.setFieldBeenBought(true);
+	}
+	
+	@Test
+	public void isCardBeenBoughtTest(){
+		assertTrue(TurnController.isCardBeenBought());
+	}
+	
+	@Before
+	public void setSheepBeenModevedTest(){
+		TurnController.setSheepBeenMoved(true);
+	}
+	
+	@Test
+	public void isSheepBeenMovedtest(){
+		assertTrue(TurnController.isBSheepBeenMoved());
+	}
+	
+	@Before
+	public void setBSheepBeenMovedTest(){
+		TurnController.setBSheepBeenMoved(true);
+	}
+	
+	@Test
+	public void isBSheepBeenMoved(){
+		assertTrue(TurnController.isBSheepBeenMoved());
+	}
+	
+	@Before
+	public void setFinalTurnTest(){
+		TurnController.setFinalTurn(true);
+	}
+	
+	@Test
+	public void isFinalTurnTest(){
+		assertTrue(TurnController.isFinalTurn());
+	}
+	
+	@Before
+	public void setWolfBeenMovedTest(){
+		TurnController.setWolfBeenMoved(true);
+	}
+	
+	@Test
+	public void isWolfBeenMovedTest(){
+		assertTrue(TurnController.isWolfBeenMoved());
+	}
+	
+	@Test
+	public void getRemainingStandardEnclosuresNumTest(){
+		
+		int temp;
+		int min = 0; 
+		int max = Game.getEnclosureNum();
+		
+		for(int i=0; i<max; i++){
+			
+			setRemainingStandardEnclosuresNumTest(i);
+			temp = TurnController.getRemainingStandardEnclosuresNum();
+			
+			if(!(min <= temp && temp <= max)){
+				assertTrue(false);
+				break;
+			}
+		}
+		
+		assertTrue(true);
+		
+	}
+	private void setRemainingStandardEnclosuresNumTest(int idtotest){
+		TurnController.setRemainingStandardEnclosuresNum(idtotest);
+	}
+		
+	@Test
+	public void  setRemainingStandardEnclosuresNumTest(){
+		this.getRemainingStandardEnclosuresNumTest();
+	}
+	
+	@Test
+	public void getRemainingFinalEnclosuresNumTest(){
+		
+		int temp;
+		int min = 0; 
+		int max = Game.getFinalEnclosureNum();
+		
+		for(int i=0; i<max; i++){
+			
+			setRemainingFinalEnclosuresNumTest(i);
+			temp = TurnController.getRemainingFinalEnclosuresNum();
+			
+			if(!(min <= temp && temp <= max)){
+				assertTrue(false);
+				break;
+			}
+		}
+		
+		assertTrue(true);
+		
+	}
+	private void setRemainingFinalEnclosuresNumTest(int idtotest){
+		TurnController.setRemainingFinalEnclosuresNum(idtotest);
+	}
+		
+	@Test
+	public void  setRemainingFinalEnclosuresNumTestA(){
+		this.getRemainingFinalEnclosuresNumTest();
+	}
+	
+
+//METTI I COMMENTI
+//METTI SEMPRE AUTORE IN ALTO IN CLASSE (lo vogliono)
+	@Test
+	public void getMaxMoveCountTest(){
+		
+		int temp;
+		int min = 0; 
+		int max = Game.getMaxMovementCount();
+		
+		for(int i=0; i<max; i++){
+			
+			temp = TurnController.getMaxMoveCount();
+			
+			if(!(min <= temp && temp <= max)){
+				assertTrue(false);
+				break;
+			}
+		}
+		
+		assertTrue(true);
+		
+	}
+	
+	@Test
+	public void getAllBoughtTypesTest(){
+		
+	
+		int max = Game.getPlotTypesNum(); 
+		int[] temp = new int[max];
+		temp[0] = 1;
+		temp[1] = 2;
+		temp[2] = 3;
+		temp[3] = 4;
+		temp[4] = 5;
+		temp[5] = 6;
+		
+			setAllBoughtTypesTest(temp);
+			assertEquals(temp, TurnController.getAllBoughtTypes());
+		
+	}
+	private void setAllBoughtTypesTest(int[] test){
+	
+		TurnController.setAllBoughtTypes(test);
+	}
+	
+	@Test
+	public void setAllBoughtTypesTestA(){
+		this.getAllBoughtTypesTest();
+	}
+	
+	@Test
+	public void getMoveDoneCountTest(){
+		
+		int temp;
+		int min = 0; 
+		int max = 0;
+		
+		for(int i=0; i<max; i++){
+			
+			setMoveDoneCountTest(i);
+			temp = TurnController.getMoveDoneCount();
+			
+			if(!(min <= temp && temp <= max)){
+				assertTrue(false);
+				break;
+			}
+		}
+		
+		assertTrue(true);
+		
+	}
+	private void setMoveDoneCountTest(int idtotest){
+		TurnController.setMoveDoneCount(idtotest);
+	}
+	
+	@Test
+	public void setMoveDoneTestA(){
+		this.getMoveDoneCountTest();
+	}
+}
+*/

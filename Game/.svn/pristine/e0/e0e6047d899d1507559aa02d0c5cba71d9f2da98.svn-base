@@ -1,0 +1,55 @@
+package game.server.controller;
+
+import static org.junit.Assert.*;
+
+import java.rmi.RemoteException;
+
+import game.server.model.Database;
+import game.server.model.Game;
+import game.server.model.Player;
+import game.server.view.Console;
+import game.server.view.ViewerInterface;
+
+import org.junit.Test;
+
+public class TurnExecutorTest {
+	
+	Game tester = new Game();
+
+	@Test
+	public void playersTurnTest() throws RemoteException {
+		int playerCounter= 1;
+		Game game = new Game();
+		ViewerInterface clientView = new Console(game);
+		int move = 1;
+		boolean isTest = true;
+		TurnExecutor.playersTurn(playerCounter, game, clientView, move, isTest);
+		if(tester.getCurrentPlayerCounter() == playerCounter){
+			playTurn(game, clientView, move, isTest);
+			assertTrue(true);
+		}
+	}
+
+	private void playTurn(Game game, ViewerInterface clientView, int move,
+			boolean isTest) {
+		
+		 
+	}
+	
+	@Test
+	public void selectShepherdForTurnTest(){
+		Player player = new Player();
+		Game game = new Game();
+		Database db = new Database();
+		ViewerInterface mainGameViewer = new Console(game);
+		boolean isTest = true;
+		TurnExecutor.selectShepherdForTurn(player, game, mainGameViewer, isTest);
+		if(tester.getPlayersNumber() == db.getTotPlayerMinNumber()){
+			int shepherdNum = CheckInput.validateSelectedShepherd(player.getThisPlayerName(), mainGameViewer);
+			assertTrue(player.getPlayerShepherdsList().get(shepherdNum-1) == player.getPlayerShepherdsList().get(0));
+			}
+		}
+
+	
+}
+

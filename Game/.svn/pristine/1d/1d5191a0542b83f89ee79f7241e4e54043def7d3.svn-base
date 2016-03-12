@@ -1,0 +1,43 @@
+package game.server.controller;
+
+import static org.junit.Assert.*;
+
+import java.rmi.RemoteException;
+
+import game.server.model.Game;
+import game.server.rmi.AddPlayer;
+import game.server.rmi.interfaces.AddPlayerInterface;
+
+import org.junit.Test;
+
+public class GameManageTest {
+	
+	
+
+	@Test
+	public void getGameInterfaceTest() throws RemoteException {
+		Game rmigame = new Game();
+		AddPlayerInterface addPlayerInterface = new AddPlayer(rmigame);
+		GameManage tester = new GameManage(rmigame, addPlayerInterface);
+		Game newGameInterface = new Game();
+		tester.setGameInterface(newGameInterface);
+		assertEquals(tester.getGameInterface(), newGameInterface);
+	}
+	
+	@Test
+	public void setGameInterfaceTest() throws RemoteException{
+		getGameInterfaceTest();
+	}
+	
+	@Test
+	public void isSyncTest(){
+		GameManage.setSync(true);
+		assertTrue(GameManage.isSync());
+		}
+	
+	@Test
+	public void setSyncTest(){
+		GameManage.setSync(true);
+		assertTrue(GameManage.isSync());
+	}
+}

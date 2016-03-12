@@ -1,0 +1,33 @@
+package game.server.controller;
+
+import static org.junit.Assert.*;
+
+import java.rmi.RemoteException;
+
+import game.server.model.Game;
+
+import org.junit.Test;
+
+public class PlayerInitializerTest {
+	
+	 public PlayerInitializer tester = new PlayerInitializer();
+
+	/*@Test
+	public void getPlayerNumberTest() {
+		Game game = new Game();
+		game.setPlayersNumber(getPlayersNumber());
+		assertEquals(game.getPlayersNumber(), game);
+		}
+
+	@Test
+	public void addPlayerTest(){
+		getPlayerNumberTest();
+	}
+	
+	@Test
+	public void initPlayerTest() throws RemoteException{
+		Game game = new Game();
+		int playNumber = 1;
+		PlayerInitializer.initPlayer(playNumber, game);
+	}*/
+}

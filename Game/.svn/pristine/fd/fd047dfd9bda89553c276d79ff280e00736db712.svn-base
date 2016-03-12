@@ -1,0 +1,110 @@
+package game.server.controller;
+
+import static org.junit.Assert.*;
+import game.server.model.Dinar;
+import game.server.model.Player;
+import game.server.model.Region;
+import game.server.model.Sheep;
+import game.server.model.SheepBlack;
+import game.server.model.Shepherd;
+import game.server.model.StandardCard;
+
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.Test;
+
+public class CounterTest {
+	
+	//CLASS VARS
+	public Counter tester = new Counter();
+	
+	/**
+	 * Test if the score compute of each player is correct
+	 * @throws RemoteException
+	 */
+	@Test
+	public void doStatsTest(){
+		
+		int checktot = 2;
+		
+		List<Shepherd> sheplist = new ArrayList<Shepherd>();
+		sheplist.add(new Shepherd());
+		
+		List<Dinar> dinlist = new ArrayList<Dinar>();
+		dinlist.add(new Dinar());
+		
+		Player pl = new Player("testplayer", sheplist, dinlist,new StandardCard("Hill", 0, 0));
+		
+		List<List<Region>> regType = new ArrayList<List<Region>>();
+		List<Region> reglist = new ArrayList<Region>();
+		reglist.add(new Region(0, new Sheep(), "Hill"));
+		regType.set(0, reglist);
+		
+		Counter.doStats(pl, null, regType);
+		
+		assertEquals(checktot, pl.getScore());
+	}
+	
+	/**
+	 * .... + even for black sheep and plot value
+	 * @throws RemoteException
+	 */
+	@Test
+	public void doStatsTestB(){
+		
+		int checktot = 7;
+		
+		List<Shepherd> sheplist = new ArrayList<Shepherd>();
+		sheplist.add(new Shepherd());
+		
+		List<Dinar> dinlist = new ArrayList<Dinar>();
+		dinlist.add(new Dinar());
+		
+		Player pl = new Player("testplayer", sheplist, dinlist, new StandardCard("Hill", 0, 0));
+		pl.addCardToOwned(new StandardCard("Hill", 1, 2));
+		
+		List<List<Region>> regType = new ArrayList<List<Region>>();
+		List<Region> reglist = new ArrayList<Region>();
+		reglist.add(new Region(0, new Sheep(), "Hill"));
+		reglist.get(0).addANewBlackSheep(new SheepBlack());
+		reglist.get(0).addANewSheep(new Sheep());
+		regType.set(0, reglist);
+		
+		Counter.doStats(pl, null, regType);
+		
+		assertEquals(checktot, pl.getScore());
+	}
+	
+	/**
+	 * Checking if sorting return a correct value
+	 * By using a manual sorting array
+	 * @throws RemoteException
+	 */
+	@Test
+	public void playerScoreSortingTest(){
+		
+		List<Player> playList = new ArrayList<Player>();
+		List<List<Integer>> checkScore = new ArrayList<List<Integer>>();
+		
+		
+		for(int i=5, j=4, k=8; i<=8; i++, j--, k--){
+			Player pl = new Player();
+			pl.setScore(i+10);
+			playList.add(pl);
+			
+			List<Integer> tempscore = new ArrayList<Integer>();
+			tempscore.add(k+10);
+			checkScore.set(j, tempscore);
+		}
+		
+		assertEquals(checkScore, Counter.playersScoreSorting(playList));
+		
+	}
+
+	
+	
+	
+
+}

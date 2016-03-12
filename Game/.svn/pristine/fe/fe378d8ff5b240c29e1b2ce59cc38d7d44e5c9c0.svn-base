@@ -1,0 +1,92 @@
+package game.client.view.gui;
+
+import game.client.rmi.StartClientRmi;
+import game.client.view.gui.model.Sheepland;
+import game.server.rmi.interfaces.AddPlayerInterface;
+
+import java.rmi.RemoteException;
+
+/**
+ * RUNNABLE IN NEW THREAD
+ * THIS CLASS
+ * CHECK FROM SERVER FOR UPDATES
+ * EVERY N SECONDS
+ * AND CALL THE UPDATE METHODS FOR MAP
+ * 
+ * @author Leonardo
+ *
+ */
+public class AutoUpdateEngine {
+	
+	private AddPlayerInterface api;
+	
+	/**
+	 * Async execution
+	 * @throws InterruptedException
+	 */
+	public void asyncUpdateService(final int time, final Sheepland obj) throws InterruptedException{
+    	
+		//task used to create a thread
+        Runnable task = new Runnable() {
+            public void run() {
+                try {
+                	
+                	//Wait before start
+                	Thread.sleep(1000);
+                	
+            		//call engine
+            		manageUpdate(time, obj);
+
+                } catch (Exception ex) {
+                    //handle error which cannot be thrown back
+                }
+            }
+        };
+        
+        //run task in new thread
+        Thread counter = new Thread(task);
+        counter.start();
+        //..and the calling class can go ahead..
+    }
+	
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //ENGINE
+	
+    private void manageUpdate(int time, Sheepland obj) throws InterruptedException, ClassNotFoundException, RemoteException{
+        
+    	//retrieve interface
+    	api = StartClientRmi.getRemoteAddPlayerInterface();
+    	
+    	//get current player number
+    	int currPlayer = StartClientRmi.getClientId();
+    	
+    	//LOOP
+    	while(obj.isRunningGame()){
+    		
+    		//check and SET UPDATES
+    		obj.updateRegionBusy(api.getGuiRegionBusy());
+        	obj.updatePlayerShepherdPos(api.getGuiPlayersShepherdLoc());
+        	obj.updatePlayerDinars(api.getGuiPlayerDinar(currPlayer));
+        	obj.updatePlayerInitialCard(api.getGuiPlayerInitialCard(currPlayer));
+        	obj.updatePlayerStandardCard(api.getGuiPlayerStandardCards(currPlayer));
+        	obj.updateStandardEnclosure(api.getGuiStandardEnclosures());
+        	obj.updateFinalEnclosure(api.getGuiFinalEnclosures());
+        	
+    		//wait for eventual repaints
+    		Thread.sleep(time);
+    		
+    		//call main update functions
+    		obj.performUpdate(api);
+    		
+    		//wait between check for updates
+    		Thread.sleep(time);
+    		
+    		// -> next check until game ends
+    	}
+    	    
+    }
+       
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+}

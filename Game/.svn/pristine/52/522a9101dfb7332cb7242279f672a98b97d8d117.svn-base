@@ -1,0 +1,177 @@
+package game.server.controller;
+
+import game.server.model.*;
+import game.server.view.ViewerInterface;
+
+import java.rmi.RemoteException;
+import java.util.List;
+
+/**
+ * MOVE MANAGEMENT CLASS
+ * For Wolf auto move
+ * 
+ * NOTE: additional rule
+ * 
+ * @author Leonardo
+ */
+public class MoveWolf {
+
+	/**
+	 * Main wolf auto jump method
+	 * @throws RemoteException 
+	 */
+	public static void moveWolfAutoJump(
+			Game game, 
+			Wolf wolf, 
+			List<Region> allRegions, 
+			List<Sheep> allSheeps, 
+			Dice dice, 
+			ViewerInterface mainGameViewer) throws RemoteException{
+		
+		//get random number
+		int rndnum = dice.getNewRandomNum();
+		
+		//notify
+		mainGameViewer.showNewRandomDice(rndnum);
+		
+		//get adj pos to wolf
+		List<Position> tmpPos = wolf.getTarget().getBorders();
+		
+		//while the move is not completed
+		//and for each position adjacent
+		for(int i=0; i<tmpPos.size() && !game.isWolfBeenMoved(); i++){
+			
+			//check if rnd num match to showed num in map's position
+			if(tmpPos.get(i).getPosViewVal() == rndnum){
+				
+				//check if position is busy				
+				if(!CheckMove.isPositionBusy(tmpPos.get(i))){
+					//position free
+					wolfAutoJumpAllowed(game, wolf, allRegions, allSheeps, tmpPos.get(i), mainGameViewer);
+				}else{
+					//position busy : override
+					wolfAutoJumpOverride(game, wolf, allRegions, allSheeps, tmpPos.get(i), mainGameViewer);
+				}
+				
+			}
+		}
+	}
+	
+	//WOLF CAN AUTO-JUMP through free pos (ENGINE)
+	private static void wolfAutoJumpAllowed(Game game, Wolf wolf, List<Region> allRegions, List<Sheep> allSheeps, Position tmpPos, ViewerInterface mainGameViewer) throws RemoteException{
+		
+		//JUMP
+		/////////////////////////////////////////////////
+		
+		//create a region to move the wolf
+		Region nextReg = new Region();
+		
+		//retrieve the previous region obj for this wolf
+		Region prevReg = wolf.getTarget();
+		
+		//search for other region with same position
+		nextReg = CheckMove.findSecondRegionWithSamePos(allRegions, tmpPos, wolf.getTarget().getRegionIdentifier(), mainGameViewer);
+		
+		//move (add) wolf
+		nextReg.setWolf(wolf);
+		wolf.setTarget(nextReg);
+		
+		//notify
+		mainGameViewer.notifyWolfAutoMove(true);
+		mainGameViewer.notifyMoveSuccessWolf(prevReg.getRegionIdentifier(), nextReg.getRegionIdentifier());
+		
+		//move (remove) wolf
+		prevReg.removeWolf();
+		
+		//EAT A SHEEP
+		wolfSheepEatingEngine(wolf, allRegions, allSheeps, mainGameViewer);	
+		
+		//set as move
+		game.setWolfBeenMoved(true);
+	}
+	
+	//WOLF CANNOT AUTO-JUMP through free pos -> OVERRIDE TO PASS OVER A POS busy by enclosure (ENGINE)
+	private static void wolfAutoJumpOverride(Game game, Wolf wolf, List<Region> allRegions, List<Sheep> allSheeps, Position tmpPos, ViewerInterface mainGameViewer) throws RemoteException{
+		
+		//motivation
+		String posBusyBy = tmpPos.getLastObjOverPos().getObjType();
+		
+		//if over pos there is an enclosure -> jump anyway (rules override)
+		if(posBusyBy.equals("Enclosure")){
+			
+			//JUMP
+			/////////////////////////////////////////////////
+			
+			//create a region to move the wolf
+			Region nextReg = new Region();
+			
+			//retrieve the previous region obj for this wolf
+			Region prevReg = wolf.getTarget();
+			
+			//search for other region with same position
+			nextReg = CheckMove.findSecondRegionWithSamePos(allRegions, tmpPos, wolf.getTarget().getRegionIdentifier(), mainGameViewer);
+			
+			//move (add) wolf
+			nextReg.setWolf(wolf);
+			wolf.setTarget(nextReg);
+			
+			//move (remove) wolf
+			prevReg.removeWolf();
+			
+			//notify
+			mainGameViewer.notifyWolfAutoMove(true);
+			mainGameViewer.notifyMoveOverrideWolfAutoJump(posBusyBy);
+			
+			//EAT A SHEEP
+			wolfSheepEatingEngine(wolf, allRegions, allSheeps, mainGameViewer);	
+			
+			//set as move
+			game.setWolfBeenMoved(true);
+			
+		}else{
+			//if there is another pawn (different by enclosure)
+			
+			//notify
+			mainGameViewer.notifyWolfAutoMove(false);
+			mainGameViewer.notifyMoveAbortOverrideWolfAutoJump(posBusyBy);
+		
+			//set as not move
+			game.setWolfBeenMoved(false);
+		}
+	}
+	
+	/**
+	 * SHEEP EATING BY WOLF
+	 * 
+	 * @param wolf
+	 * @param allRegions
+	 * @param allSheeps
+	 * @param mainGameViewer
+	 */
+	private static void wolfSheepEatingEngine(Wolf wolf, List<Region> allRegions, List<Sheep> allSheeps, ViewerInterface mainGameViewer){
+		
+		//current region of wolf
+		Region currWolfReg = wolf.getTarget();
+		
+		//sheeps in this region
+		List<Sheep> currWolfRegSheepList = currWolfReg.getAllSheeps();
+		
+		//if there is at least a sheep
+		if(currWolfRegSheepList.size()>0){
+			
+			//eat the first sheep
+			Sheep sheeptorem = allSheeps.get(0);
+			allSheeps.remove(sheeptorem);
+			currWolfReg.removeASheep();
+			
+			//notify
+			mainGameViewer.notifyWolfAutoEat(true);
+			
+		}else{
+			
+			//notify
+			mainGameViewer.notifyWolfAutoEat(false);
+		}
+	}
+	
+}

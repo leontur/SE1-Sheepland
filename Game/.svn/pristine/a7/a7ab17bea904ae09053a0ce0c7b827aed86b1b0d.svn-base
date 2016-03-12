@@ -1,0 +1,30 @@
+package game.client.view.gui.model;
+
+/**
+ * MOVEMENT AND TURN UPDATE CLASS
+ * SET IN THE MAP 
+ * THE UPDATED POSITION OF ALL OBJECTS
+ * 
+ * NOTE: all the objects are inherited by the super class sheepland
+ * 
+ * @author Leonardo
+ *
+ */
+public class SheeplandUpdate extends Sheepland {
+
+	/**
+	 * CLASS VARS
+	 */
+	private static final long serialVersionUID = 1L;
+	
+	
+	/**
+	 * METHODS
+	 */
+	public static void performUpdate(){
+		
+	}
+	
+	
+	
+}

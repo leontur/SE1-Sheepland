@@ -1,0 +1,202 @@
+package game.server.controller;
+
+import game.server.interfaces.DatabaseInterface;
+import game.server.model.Database;
+import game.server.model.Game;
+import game.server.model.Player;
+import game.server.model.Position;
+import game.server.model.Region;
+import game.server.view.ViewerInterface;
+
+import java.util.List;
+
+/**
+ * MAIN INPUT CHECK CLASS
+ * 
+ * @author Leonardo
+ *
+ */
+public class CheckInput {
+
+	//DB IMPORT
+	private static DatabaseInterface db = new Database();
+		
+	/**
+	 * DEFAULT CONSTRUCTOR
+	 * private for static classes
+	 */
+	private CheckInput(){
+		
+	}
+	
+	/**
+	 * Ask and validate the input for a new position target
+	 * @return
+	 */
+	public static int validateSelectedPosition(ViewerInterface mainGameViewer) {
+		
+		int reask = 0;
+		int pos;
+		
+		do{		
+			if(reask>0){
+				mainGameViewer.notifyNotAllowedMoveReAsk();
+			}
+			pos = mainGameViewer.askForNewMoveTarget();
+			reask++;
+			
+		}while(!(pos>0 && pos<=db.getPositionNum()));
+		
+		return pos;
+		
+	}
+
+	/**
+	 * Ask and validate the input for a new move type
+	 * @return
+	 */
+	public static int validateSelectedMove(List<Player> players, int forplayer, int remMoves, ViewerInterface mainGameViewer) {
+		
+		int reask = 0;
+		int move;
+		
+		do{			
+			
+			if(reask>0){
+				mainGameViewer.notifyNotAllowedMoveReAsk();
+			}
+			
+			//get move
+			move = mainGameViewer.askForNewMoveType(players.get(forplayer).getThisPlayerName(), remMoves);
+			
+			reask++;
+			
+		}while(!(move>0 && move<=db.getMaxMovementCount()));
+		
+		return move;
+		
+	}
+
+	/**
+	 * Ask and validate the shepherd selection for turn
+	 * @return
+	 */
+	public static int validateSelectedShepherd(String playername, ViewerInterface mainGameViewer) {
+		
+		int reask = 0;
+		int move;
+		
+		do{			
+			
+			if(reask>0){
+				mainGameViewer.notifyNotAllowedMoveReAsk();
+			}
+			
+			//get move
+			move = mainGameViewer.askWhichShepherd(playername);
+			
+			reask++;
+			
+		}while(!(move>=1 && move<=db.getTotShepherdVariantNumber()));
+		
+		return move;
+	}
+	
+	/**
+	 * Ask and validate the player new name
+	 * @return
+	 */
+	public static String validateSelectedPlayerName(int player, List<Player> players, ViewerInterface mainGameViewer) {
+		
+		int reask = 0;
+		int count = 0;
+		String newname;
+		
+		do{	
+		
+			if(reask>0){
+				mainGameViewer.notifyNotAllowedMoveReAsk();
+			}
+			
+			//get name
+			newname = mainGameViewer.askPlayerName(player+1);
+			
+			//for all registered players until current time
+			for(Player pl : players){
+				//if the name is already in use
+				if(pl.getThisPlayerName().equals(newname)){
+					//increase counter
+					count++;
+				}
+			}
+			
+			if(count==0){
+				return newname;
+			}else{
+				count=0;
+				reask++;
+			}
+			
+		}while(true);
+	}
+	
+	/**
+	 * Ask and validate the new position for shepherd
+	 * @return
+	 */
+	public static int validateSelectedPlayerShepherdPosition(int player, String playerName, List<Position> allPositions, ViewerInterface mainGameViewer) {
+		
+		int tempPos;
+		int notallow = 0;
+		
+		//request position
+		do{
+			
+			//notify for bad choice
+			if(notallow>0){
+				mainGameViewer.notifyNotAllowedMoveReAsk();
+			}
+			
+			//get pos
+			tempPos = mainGameViewer.askForNewShepherdPosition(player, playerName);
+			
+			notallow++;
+			
+		}while(
+				tempPos < 1
+				|| tempPos > db.getPositionNum()
+				|| CheckMove.isPositionBusy(allPositions.get(tempPos-1))
+				);
+		
+		return tempPos;
+	}
+	
+	/**
+	 * Ask and validate the new terrain card purchase
+	 * @return
+	 */
+	public static int validateSelectedPlotTypeCard(Game game, List<Region> regAroundShepherd, ViewerInterface mainGameViewer) {
+		
+		int move;
+		int notallow = 0;
+		
+		//request position
+		do{
+			
+			//notify for bad choice
+			if(notallow>0){
+				mainGameViewer.notifyNotAllowedMoveReAsk();
+			}
+			
+			//get pos
+			move = mainGameViewer.showPlotTypesAroundShepherd(regAroundShepherd, game.getAllBoughtTypes());
+			
+			notallow++;
+			
+		}while(!(move>=1 && move<=regAroundShepherd.size()));
+		
+		return move;
+	}
+	
+	
+}

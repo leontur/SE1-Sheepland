@@ -1,0 +1,73 @@
+package game.server.controller;
+
+import static org.junit.Assert.*;
+
+import java.rmi.RemoteException;
+
+import game.server.AddPlayer;
+import game.server.interfaces.AddPlayerInterface;
+import game.server.model.Game;
+
+import org.junit.Test;
+
+/**
+ * New game manage test class
+ * 
+ * @author Dario
+ *
+ */
+public class GameManageTest {
+	
+	
+	/**
+	 * Control interface of the game 
+	 * 
+	 * @throws RemoteException
+	 */
+	@Test
+	public void getGameInterfaceTest() throws RemoteException {
+		Game rmigame = new Game();
+		AddPlayerInterface addPlayerInterface = new AddPlayer(rmigame);
+		GameManage tester = new GameManage(rmigame, addPlayerInterface, false, true);
+		Game newGameInterface = new Game();
+		tester.setGameInterface(newGameInterface);
+		assertEquals(tester.getGameInterface(), newGameInterface);
+	}
+	
+	@Test
+	public void setGameInterfaceTest() throws RemoteException{
+		getGameInterfaceTest();
+	}
+	
+	/**
+	 * Control synchronize
+	 */
+	@Test
+	public void isSyncTest(){
+		GameManage.setSync(true);
+		assertTrue(GameManage.isSync());
+		}
+	
+	@Test
+	public void setSyncTest(){
+		GameManage.setSync(true);
+		assertTrue(GameManage.isSync());
+	}
+	
+	/**
+	 * Run on thread
+	 * 
+	 * @throws RemoteException
+	 * @throws InterruptedException
+	 */
+	@Test
+	public void runTest() throws RemoteException, InterruptedException{
+		Game rmigame = new Game();
+		AddPlayerInterface addPlayerInterface = new AddPlayer(rmigame);
+		GameManage ngm = new GameManage(rmigame, addPlayerInterface, false, true);
+		Thread manage = new Thread(ngm);
+		manage.start();
+		manage.join();
+		assertTrue(rmigame.isRunningGame());
+	}
+}

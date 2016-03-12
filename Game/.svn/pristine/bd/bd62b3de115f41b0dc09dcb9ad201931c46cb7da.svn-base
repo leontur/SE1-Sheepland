@@ -1,0 +1,234 @@
+package game.server.socket;
+
+import game.server.AddPlayer;
+import game.server.controller.CustomLogger;
+import game.server.model.Game;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.logging.Level;
+
+
+/**
+ * SERVER CLASS
+ * OF GUI SOCKET UPDATER
+ * 
+ * RECEIVE A REQUEST FROM CLIENT AND SEND A RESPONSE
+ * 
+ * PORTs USED FOR THE GUI ARE THE SAME AS THE CLIENT CONSOLE, BUT SHIFTED OF +1000
+ * 
+ * NOTE: static class | EXECUTE IN NEW THREAD ! | MUST BE REQUESTED FOR EACH CLIENT
+ * 
+ * @author Leonardo
+ *
+ */
+public class SocketGuiUpdater implements Runnable {
+
+	//CONNECTION VARS
+	private ObjectOutputStream outStream;
+	private ObjectInputStream inStream;
+	private int clientPort;
+	private AddPlayer api;
+	private ServerSocket server;
+	
+	//commands from client (first of msg split) 
+	private String[] guiCmds = new String[]{
+			//0 getGuiRegionBusy()
+			"getGuiRegionBusy", 
+			//1 getGuiPlayersShepherdLoc()
+			"getGuiPlayersShepherdLoc", 
+			//2 getGuiPlayerDinar(currPlayer)
+			"getGuiPlayerDinar", 
+			//3 getGuiPlayerInitialCard(currPlayer)
+			"getGuiPlayerInitialCard",
+			//4 getGuiPlayerStandardCards(currPlayer)
+			"getGuiPlayerStandardCards", 
+			//5 getGuiStandardEnclosures()
+			"getGuiStandardEnclosures",	
+			//6 getGuiFinalEnclosures()
+			"getGuiFinalEnclosures", 
+			//7 getGuiPositionEnclosureBusy()
+			"getGuiPositionEnclosureBusy",
+			//8 getGuiCurrentPlayerNumber()
+			"getGuiCurrentPlayerNumber",
+			//9 getGuiLastDiceNum()
+			"getGuiLastDiceNum"
+	};
+
+	/**
+	 * CONSTRUCTOR
+	 * get and set the current client port
+	 * debug: ("NEW GUI UPDATE LISTENER CREATED | in new thread | on port " + port)
+	 * @throws IOException 
+	 */
+	public SocketGuiUpdater(int port, Game game) throws IOException{
+		this.clientPort = port;
+		this.api = new AddPlayer(game);
+		
+		//allocation of listener
+    	server = new ServerSocket(port);
+	}
+
+	/**
+	 * Main method for gui update from client
+	 * 
+	 * receive a request, send a stream with an object for the map update (if success)
+	 * return null (if error occurs)
+	 * 
+	 * @param clientPort
+	 * @return
+	 */
+	public void run(){
+		
+		//wait a command
+		while(true){			
+			
+			try {
+				
+				//receive a command
+				String msg = receiver(clientPort);
+
+				//check
+				if(msg==null){
+					continue;
+				}
+
+				//split the arrived string 
+				//format: [command]#[vars]
+				String[] parts = msg.split("#");
+				String cmd = parts[0];
+				String vars = "";
+				try{
+					vars = parts[1];
+				}catch(Exception e){
+					vars = "";
+				}
+				
+				//instantiate the object to send
+				Object obj = null;
+				
+				//calculate object
+				//request the correct method
+				if(guiCmds[0].equals(cmd)){
+					
+					obj = api.getGuiRegionBusy();
+					
+				}else if(guiCmds[1].equals(cmd)){
+					
+					obj = api.getGuiPlayersShepherdLoc();
+							
+				}else if(guiCmds[2].equals(cmd)){
+					
+					obj = api.getGuiPlayerDinar(Integer.parseInt(vars));
+							
+				}else if(guiCmds[3].equals(cmd)){
+					
+					obj = api.getGuiPlayerInitialCard(Integer.parseInt(vars));
+							
+				}else if(guiCmds[4].equals(cmd)){
+					
+					obj = api.getGuiPlayerStandardCards(Integer.parseInt(vars));
+							
+				}else if(guiCmds[5].equals(cmd)){
+					
+					obj = api.getGuiStandardEnclosures();
+							
+				}else if(guiCmds[6].equals(cmd)){
+					
+					obj = api.getGuiFinalEnclosures();
+							
+				}else if(guiCmds[7].equals(cmd)){
+					
+					obj = api.getGuiPositionEnclosureBusy();
+							
+				}else if(guiCmds[8].equals(cmd)){
+					
+					obj = api.getGuiCurrentPlayerNumber();
+							
+				}else if(guiCmds[9].equals(cmd)){
+					
+					obj = api.getGuiLastDiceNum();
+							
+				}
+				
+				//send the object
+				sender(obj, clientPort);
+			
+			} catch (Exception e) {
+				CustomLogger.logEx("SocketGuiUpdater", "run", "impossible to get the requested object, and to send it to client", Level.WARNING, e);
+			}
+			
+		}
+		
+	}
+	
+	
+	/**
+	 * send the object requested to client
+	 * @return
+	 * @throws IOException 
+	 */
+	private boolean sender(Object objToSend, int clientPort) throws Exception{
+		
+		try{
+			//creating socket
+    		//waiting for client connection
+            Socket socket = server.accept();
+            
+            //timeout
+            socket.setSoTimeout(2000);
+            
+			//creating writer to server
+	        outStream = new ObjectOutputStream(socket.getOutputStream());
+	        
+	        //write to server
+	        outStream.writeObject(objToSend);
+	        
+	        //close resources
+	        outStream.close();
+	        
+		}catch(Exception e){
+			CustomLogger.logInfo("SocketGuiUpdater", "sender", "impossible to send the object to client");
+			return false;
+		}
+        
+		return true;
+	}
+	
+	/**
+	 * receive the requested commad (as string) from client
+	 * @return
+	 * @throws IOException 
+	 * @throws ClassNotFoundException 
+	 */
+	private String receiver(int clientPort) throws Exception{
+		
+		try{
+			//creating socket
+    		//waiting for client connection
+            Socket socket = server.accept();
+            
+            //timeout
+            socket.setSoTimeout(2000);
+						
+			//creating reader from server
+	        inStream = new ObjectInputStream(socket.getInputStream());
+	        
+	        //read from server
+	        String cmd = (String) inStream.readObject();
+	        
+	        //close resources
+	        inStream.close();
+	        
+	        return cmd;
+	        
+		}catch(Exception e){
+			CustomLogger.logInfo("SocketGuiUpdater", "sender", "impossible to receive the command from client");
+			return null;
+		}
+	}
+	
+}

@@ -1,0 +1,94 @@
+package game.server.controller;
+
+import static org.junit.Assert.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import game.server.model.Dice;
+import game.server.model.Game;
+import game.server.model.Position;
+import game.server.model.Region;
+import game.server.model.Sheep;
+import game.server.model.SheepBlack;
+import game.server.model.Shepherd;
+import game.server.view.Console;
+import game.server.view.ViewerInterface;
+
+import org.junit.Test;
+
+public class MoveSheepTest {
+	
+	public MoveSheep tester = new MoveSheep();
+	public Region reg = new Region();
+
+	/**
+	 * Sheep main movement call
+	 * (manual move - for black and white)
+	 * 
+	 *  -control feasibility
+	 *  -select a sheep
+	 *  -ask to user if ok to move that sheep
+	 *  	-if ok, move
+	 *  	-if not ok, reask
+	 *  		-if finished sheep, notify
+	 */
+	@Test
+	public void moveSheepTest(){
+		
+		Game game = new Game();
+		ViewerInterface mainGameViewer = new Console(game);
+		Shepherd shepherd = new Shepherd(0, "r");
+		SheepBlack bsheep = new SheepBlack(0, null);
+		
+		//reg
+		List<Region> allRegions = new ArrayList<Region>();
+		allRegions.add(new Region(0, null, "hill"));
+		allRegions.add(new Region(1, null, "hill"));
+		
+		//pos
+		List<Position> adjPos = new ArrayList<Position>();
+		Position checkpos = new Position(0,1);
+		adjPos.add(checkpos);
+		adjPos.add(new Position(1,0));
+		
+		//set poss
+		allRegions.get(0).setAdjPositions(adjPos);
+		allRegions.get(1).setAdjPositions(adjPos);
+		
+		//set values
+		game.setGameAllRegions(allRegions);
+		bsheep.setTarget(allRegions.get(0));
+		
+		/*CheckMove.isAtLeastASheepInRegionsAround()
+		MoveBlackSheep.moveBlackSheepBetweenRegions
+		
+		check
+		/*MoveSheep.moveSheep(null, null, null, null, false);
+		assertFalse(bsheep.getTarget().getRegionIdentifier() == mainGameViewer.askForSheepToMove(prevSheepReg.getRegionIdentifier()+1, nextSheepReg.getRegionIdentifier()+1);
+		*/
+	}
+
+	/**
+	 * Control white (manual movement)
+	 */
+	@Test
+	public void selectSheepToMoveTest(){
+		List<Region> regionsAround = new ArrayList<Region>();
+		Region re = new Region();
+		regionsAround.add(re);
+		assertEquals(reg.getAllSheeps().size(), regionsAround);
+	}
+	
+	/**
+	 * Control black (manual movement)
+	 */
+	@Test
+	public void selectSheepToMoveTestA(){
+		List<Region> regionsAround = new ArrayList<Region>();
+		Region re = new Region();
+		regionsAround.add(re);
+		assertEquals(reg.getAllBlackSheeps().size(), regionsAround);
+		}
+}
+	

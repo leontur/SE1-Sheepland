@@ -1,0 +1,131 @@
+package game.client.socket;
+
+import game.client.rmi.interfaces.ClientConsoleInterface;
+import game.client.view.ClientConsole;
+
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.net.SocketException;
+import java.rmi.RemoteException;
+import java.util.Scanner;
+
+/**
+ * 
+ * CLIENT SOCKET
+ * CONNECTION CLASS
+ * 
+ * @author Leonardo
+ *
+ */
+public class StartClientSocket {
+	
+	/**
+	 * CLASS VARS
+	 */
+	
+	//PORT NUMBER FOR COMMUNICATION
+	private static final int PORT = 4000;
+	
+	//GAME VARS
+	private static boolean gameIsRunning;
+	
+	/**
+	 * INTERFACES IMPORT
+	 */
+	private static ClientConsoleInterface clientConsoleInterface;
+	
+	public StartClientSocket() throws RemoteException{
+		clientConsoleInterface = new ClientConsole();
+	}
+	
+	/**
+	 * SOCKET CLASS MAIN METHOD
+	 * create a socket, input/output stream from server, and log the client into server as new client id
+	 */
+	public void runClientSocket() throws Exception {
+		
+		//declaring vars
+		Socket socket = null;
+		Scanner clientIn = null;
+		PrintWriter clientOut = null;
+		Scanner in = null;
+		
+		try {
+			
+			//notify
+			clientConsoleInterface.showOnClient("Connecting to server..");
+			
+			//creating socket
+			socket = new Socket("127.0.0.1", PORT);
+			
+			//creating a receiver from server (as stream)
+			clientIn = new Scanner(socket.getInputStream());
+			
+			//creating a transmitter to server (as stream)
+			clientOut = new PrintWriter(socket.getOutputStream());
+			
+			//allocate a new scanner for input
+			in = new Scanner(System.in);
+			
+			//log in on the server
+			
+			//start game
+			gameIsRunning = true;
+			
+			//output var
+			String serverOut;
+			
+			//MAIN CLIENT RUNNING GAME
+			while(gameIsRunning){
+				
+				//input from client
+				String newLine = in.nextLine();
+				
+				//input send to server
+				clientOut.println(newLine);
+				clientOut.flush();
+				
+				//output from server
+				if(clientIn.hasNextLine()){
+					
+					//request stream
+					serverOut = clientIn.nextLine();
+					
+					//check for closing tag
+					if(serverOut.equals("#gameover#")){
+						
+						//set game as ended
+						gameIsRunning = false;
+						break;
+					}
+					
+					//print stream
+					clientConsoleInterface.showOnClient(serverOut);
+					
+				}
+				
+				// > GAME RUNNING HERE <
+				
+				//clear buffer
+				in.next();
+			}
+			
+		} catch (RemoteException e) {
+			clientConsoleInterface.exceptionClientLogger("Remote Exception in StartClientRmi", e);
+			throw new SocketException();
+		} finally {
+		
+			//release resources
+			in.close();
+			clientIn.close();
+			clientOut.close();
+			socket.close();
+			
+			//notify
+			clientConsoleInterface.showOnClient("..disconnected from server.\nGAME OVER");
+		}
+		
+	}
+
+	
+}

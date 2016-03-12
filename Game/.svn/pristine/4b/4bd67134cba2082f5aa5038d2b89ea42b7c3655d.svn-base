@@ -1,0 +1,52 @@
+package game.client.view.gui.model;
+
+import java.awt.Image;
+import java.awt.Toolkit;
+
+import javax.swing.ImageIcon;
+
+import game.client.view.gui.StaticObject;
+
+/**
+ * DICE
+ * OBJECT CLASS
+ * 
+ * INHERIT ABILITY FROM SUPERCLASSES
+ * 
+ * @author Leonardo
+ */
+public class Dice extends StaticObject {
+	
+	/**
+	 * CLASS SERIAL VERSION ID
+	 */
+	private static final long serialVersionUID = 1L;
+	
+	/**
+	 * CLASS VARS
+	 */
+	private ImageIcon img;
+	
+	//scaling
+	private int boundX = 80;
+	private int boundY = boundX;
+	
+	/**
+	 * CLASS CONTSTRUCTOR
+	 */
+	public Dice(){
+		try{
+			//import
+			Image imgsrc = Toolkit.getDefaultToolkit().createImage(dirPathGif + "dice2.gif");	
+			//image set
+			img = new ImageIcon(imgsrc);
+		}catch (Exception e){
+			e.printStackTrace();
+		}
+		
+		setBounds(0, 0, boundX, boundY);
+		setIcon(img);
+	}
+	
+	
+}

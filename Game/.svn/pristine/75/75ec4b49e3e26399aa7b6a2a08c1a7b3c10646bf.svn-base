@@ -1,0 +1,192 @@
+package game.server.model;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * MAIN REGION CLASS
+ * 
+ * @author Leonardo
+ */
+public class Region extends InitialCard {
+	
+	//OBJ IDENTIFIER
+	private static final String OBJ_IDENTIFIER = "Region";
+	
+	//REGION IDENTIFIER
+	private int regionIdentifier;
+	
+	//LIST OF ADJACENT POSITION
+	protected List<Position> adjPos = new ArrayList<Position>();
+	
+	//WHITE SHEEPS COUNTER FOR THIS REGION
+	protected List<Sheep> sheepCount = new ArrayList<Sheep>();
+	
+	//BLACK SHEEPS COUNTER FOR THIS REGION
+	protected List<SheepBlack> sheepBCount = new ArrayList<SheepBlack>();
+	
+	//WOLF OBJECT
+	protected Wolf wolf = null;
+	
+	/**
+	 * CONSTRUCTOR AND INITIALIZATION
+	 *
+	 * @param id
+	 * @param newsheep
+	 * @param plottype
+	 */
+	public Region(int id, Sheep newsheep, String plottype) {
+		//Initialization is only partially in this constructor
+		regionIdentifier = id;
+		sheepCount.add(newsheep);
+		setInitialCardPlotType(plottype);
+		setThisObjType(OBJ_IDENTIFIER);
+	}
+	public Region() {
+		this(0, null, null);
+	}
+	
+	
+	/**
+	 * METHODS
+	 */
+	
+	/**
+	 * Get all the list of sheeps in this region
+	 * @return
+	 */
+	public List<Sheep> getAllSheeps(){
+		return sheepCount;
+	}
+	/**
+	 * Get all the list of black sheeps in this region
+	 * @return
+	 */
+	public List<SheepBlack> getAllBlackSheeps(){
+		return sheepBCount;
+	}
+
+	/**
+	 * Get the last sheep present in the list (for the move)
+	 * @return
+	 */
+	public Sheep getLastSheepInThisRegion(){
+		return sheepCount.get(sheepCount.size()-1);
+	}
+	
+	/**
+	 * Get the last black sheep present in the list (for the move)
+	 * @return
+	 */
+	public SheepBlack getLastBlackSheepInThisRegion(){
+		return sheepBCount.get(sheepBCount.size()-1);
+	}
+	
+	
+	/**
+	 * Add a new sheep (white) to this region
+	 * @param sheep
+	 */
+	public void addANewSheep(Sheep sheep){
+		sheepCount.add(sheep);
+	}
+	
+	/**
+	 * Add a new sheep (black) to this region
+	 * @param sheep
+	 */
+	public void addANewBlackSheep(SheepBlack sheep){
+		sheepBCount.add(sheep);
+	}
+	
+	/**
+	 * Remove A sheep (white) from this region
+	 */
+	public void removeASheep(){
+		sheepCount.remove(sheepCount.size()-1);
+	}
+	
+	/**
+	 * Remove THE sheep (white) from this region
+	 */
+	public void removeTheSheep(Sheep sheeptorem){
+		sheepCount.remove(sheeptorem);
+	}
+	
+	/**
+	 * Remove a sheep (black) from this region
+	 */
+	public void removeABlackSheep(){
+		sheepBCount.remove(sheepBCount.size()-1);
+	}
+	
+	
+	/**
+	 * Set current region's new adjacent positions
+	 * @param posns
+	 */
+	public void setAdjPositions(List<Position> posns){
+		adjPos = posns;
+	}
+	
+	/**
+	 * Get region's current adjacent positions
+	 * @return
+	 */
+	public List<Position> getBorders(){
+		return adjPos;
+	}
+	
+	/**
+	 * Get the plot type
+	 */
+	@Override
+	public String getInitialCardPlotType(){
+		return super.getInitialCardPlotType();
+	}
+	
+	/**
+	 * Set a new identifier for this region
+	 * @param newid
+	 */
+	public void setRegionIdentifier(int newid){
+		regionIdentifier = newid;
+	}
+
+	/**
+	 * Get the current region's identifier
+	 * @return
+	 */
+	public int getRegionIdentifier(){
+		return regionIdentifier;
+	}
+	
+	
+	/**
+	 * WOLF METHODS
+	 */
+	
+	/**
+	 * Get the wolf in this region
+	 * @param wolf
+	 */
+	public Wolf getWolf(){
+		return wolf;
+	}
+	
+	/**
+	 * Set the wolf in this region
+	 * @param wolf
+	 */
+	public void setWolf(Wolf newwolf){
+		wolf = newwolf;
+	}
+	
+	/**
+	 * Remove wolf from this region
+	 */
+	public void removeWolf(){
+		wolf = null;
+	}
+	
+}

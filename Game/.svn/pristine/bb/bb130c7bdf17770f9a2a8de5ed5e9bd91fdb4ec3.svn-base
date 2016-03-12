@@ -1,0 +1,51 @@
+package game.client.view;
+
+import java.io.File;
+
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+ 
+/**
+ * SOUND PLAYER CLASS
+ * 
+ * REQUESTED AS IN NEW THREAD
+ * PLAY IN THE CLIENT THE SELECTED SOUND
+ * 
+ * @author Leonardo
+ *
+ */
+public class SoundPlayer implements Runnable {
+
+	private String trackName;
+	private String path = "./resources/mp3/";
+	
+	/**
+	 * sound executor (only for mp3)
+	 * @param selSound, is the id of the track to play
+	 */
+	public SoundPlayer(String trackName){
+		this.trackName = trackName;
+	}
+	
+	/**
+	 * 
+	 */
+	public void run() {
+		try{
+		 
+			//open file
+			AudioInputStream audioStream = AudioSystem.getAudioInputStream(new File(path + trackName + ".mp3"));
+			
+			//execute
+			Clip clip = AudioSystem.getClip();
+			clip.open(audioStream);
+			clip.start();
+		
+		}catch(Exception ex){
+			//TODO CLIENT LOGGER
+		}
+		
+	}
+
+}

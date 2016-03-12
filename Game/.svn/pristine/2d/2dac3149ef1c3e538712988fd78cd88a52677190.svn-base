@@ -1,0 +1,172 @@
+package game.server.model;
+
+import static org.junit.Assert.*;
+import game.server.model.Game;
+import game.server.model.Position;
+
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.After;
+import org.junit.Test;
+
+/**
+ * MAIN POSITION-TEST CLASS
+ * 
+ * @author Dario
+ */
+
+public class PositionTest {
+	
+	//CLASS VARS
+	public Position tester = new Position();
+	//METHODS VARS
+	public int testInt = 1;
+	public int testInt1 = 1;
+	public Game game = new Game();
+	public List<Game> gameList = new ArrayList<Game>();
+	public Position position = new Position();
+	public List<Position> positionList = new ArrayList<Position>();
+	
+	/**
+	 * Control the current position identifier and a new identifier
+	 * For this position
+	 */
+	@Test
+	public void getPosIdentifierTest() {
+		setPosIdentifierTest();
+		assertEquals(tester.getPosIdentifier(), testInt);
+	}
+	private void setPosIdentifierTest(){
+		tester.setPosIdentifier(testInt);
+	}
+	
+	@Test
+	public void setPosIdentifierTest1(){
+		this.getPosIdentifierTest();
+	}
+	
+	/**
+	 * Control the current position's viewer value 
+	 * And a new view value for this position
+	 */
+	@Test 
+	public void getPosViewValTest(){
+		tester.setPosViewVal(testInt1);
+		assertEquals(tester.getPosViewVal(), testInt1);
+	}
+	
+	@Test
+	public void setPosViewValTest1(){
+		getPosViewValTest();
+	}
+	
+	/**
+	 * Control the object over this position and add a new object
+	 * Over the position
+	 * @throws RemoteException 
+	 */
+	@Test
+	public void getAllObjOverPosTest(){
+		gameList.clear();
+		gameList.add(game);
+		tester.addObjOverPos(game);
+		assertEquals(tester.getAllObjOverPos(), gameList);
+	}
+	
+	@Test
+	public void addObjOverPosTestA(){
+		this.getAllObjOverPosTest();
+	}
+	
+	/**
+	 * control the last object over this position
+	 */
+	@Test
+	public void getLastObjOverPos(){
+		gameList.clear();
+		gameList.add(game);
+		tester.addObjOverPos(game);
+		assertEquals(tester.getLastObjOverPos(), game);
+	}
+	
+	/**
+	 * Control the count for position occupation
+	 */
+	@Test
+	public void posOccupationCountTest(){
+		gameList.clear();
+		tester.addObjOverPos(game);
+		tester.addObjOverPos(game);
+		assertEquals(tester.posOccupationCount(), 2);
+	}
+	
+	/**
+	 *  Remove the last object from this position
+	 * @throws RemoteException 
+	 */
+	@After
+	public void subLastObjFromPosTest(){
+		
+		Position postest = new Position();
+		postest.addObjOverPos(new Game());
+		postest.subLastObjFromPos();
+		assertEquals(postest.getAllObjOverPos().size(), 0);
+    }
+	
+	/**
+	 * Get the current adjacent position around this position
+	 * And add new adjacent position around this position
+	 * @throws RemoteException 
+	 */
+	@Test
+	public void getAllAdjPosAroundThisTest(){
+		Position position = new Position();
+		positionList.clear();
+		positionList.add(position);
+		tester.addAdjPosAroundThis(position);
+		assertEquals(tester.getAllAdjPosAroundThis(),positionList);
+	}
+	
+	@Test
+	public void  addAdjPosaroundTest1(){
+		getAllAdjPosAroundThisTest();
+	}
+	
+	/**
+	 * Control position occupation status
+	 * @throws RemoteException 
+	 */
+	@Test
+	public void isObjOverPosTestA(){
+		Position test = new Position();
+		test.addObjOverPos(new Game());
+		assertTrue(test.isObjOverPos());
+	}
+	
+	@Test
+	public void isObjOverPosTestB(){
+		Position test = new Position();
+		assertFalse(test.isObjOverPos());
+	}
+	
+	@Test
+	public void ConstructorTest(){
+		Position test = new Position();
+		if(test.getObjType() == "Position" && test.getPosViewVal() == 0 && test.getPosIdentifier() == 0){
+			assertTrue(true);
+		}
+	}
+	
+	@Test
+	public void ConstructorTestA(){
+		Position test = new Position(10,10);
+		if(test.getObjType() == "Position" && test.getPosViewVal() == 10 && test.getPosIdentifier() == 10){
+			assertTrue(true);
+		}
+	}
+}
+
+
+

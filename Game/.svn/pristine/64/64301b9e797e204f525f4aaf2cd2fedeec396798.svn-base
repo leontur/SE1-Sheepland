@@ -1,0 +1,85 @@
+package game.server.controller;
+
+import static org.junit.Assert.*;
+
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
+
+import game.server.model.Database;
+import game.server.model.Dice;
+import game.server.model.Dinar;
+import game.server.model.Game;
+import game.server.model.InitialCard;
+import game.server.model.Player;
+import game.server.model.Position;
+import game.server.model.Region;
+import game.server.model.SheepBlack;
+import game.server.model.Shepherd;
+import game.server.model.StandardCard;
+import game.server.rmi.interfaces.DatabaseInterface;
+import game.server.view.Console;
+import game.server.view.ViewerInterface;
+
+import org.junit.Test;
+
+/**
+ * Move management-test class
+ * For Cards
+ * 
+ * @author Dario
+ */
+public class MoveCardsTest {
+	
+	public MoveCards tester;
+	private static DatabaseInterface db = new Database();
+	
+	/**
+	 * Control terrain card purchase method
+	 * @throws RemoteException
+	 */
+	@Test
+	public void buyCardTest(){
+		
+		Game game = new Game();
+		ViewerInterface mainGameViewer = new Console(game);
+		Shepherd shepherd = new Shepherd(0, "r");
+		List<Dinar> remainingDinars = new ArrayList<Dinar>();
+		remainingDinars.add(new Dinar());
+		Player player = new Player("player1", null, remainingDinars, null);
+		int selectType = 1;
+		
+		
+		//stand card
+		List<List<StandardCard>> plotCardsPileByPlotType = new ArrayList<List<StandardCard>>();
+		List<StandardCard> plotCardsPile = new ArrayList<StandardCard>();
+		plotCardsPile.add(new StandardCard("hill", 0,1));
+		plotCardsPile.add(new StandardCard("forest", 1,3));
+		plotCardsPileByPlotType.add(plotCardsPile);
+		
+		//reg
+		List<Region> allRegions = new ArrayList<Region>();
+		allRegions.add(new Region(0, null, "hill"));
+		allRegions.add(new Region(1, null, "hill"));
+		
+		//pos
+		List<Position> adjPos = new ArrayList<Position>();
+		Position checkpos = new Position(0,1);
+		adjPos.add(checkpos);
+		adjPos.add(new Position(1,0));
+		
+		//set poss
+		allRegions.get(0).setAdjPositions(adjPos);
+		allRegions.get(1).setAdjPositions(adjPos);
+		
+		//set values
+		game.setGameAllRegions(allRegions);
+		player.addCardToOwned(plotCardsPile.get(0));
+		
+		List<Region> regAroundShepherd = CheckMove.findRegionsWithSamePos(allRegions, shepherd.getCurrShepherdTarget());
+		//check
+		MoveCards.buyCard(game, player, shepherd, allRegions, plotCardsPileByPlotType, mainGameViewer,selectType, true);
+		assertTrue(player.getLastOwnedCard().getCardIdentifier() == CheckInput.validateSelectedPlotTypeCard(game, regAroundShepherd, mainGameViewer));
+	
+	}
+}

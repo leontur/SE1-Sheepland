@@ -1,0 +1,125 @@
+package game.server.controller;
+
+import static org.junit.Assert.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import game.server.model.Database;
+import game.server.model.Game;
+import game.server.model.Position;
+import game.server.model.Region;
+import game.server.view.Console;
+import game.server.view.ViewerInterface;
+
+import org.junit.Test;
+
+public class CheckMoveTest {
+	
+	Database db = new Database();
+
+	@Test
+	public void moveSequenceCheckTest() {
+		Game game = new Game();
+		int selectedMove = 1;
+		CheckMove.moveSequenceCheck(game, selectedMove);
+		if(presetMoveSequence1Test(game, selectedMove) || presetMoveSequence2Test(game, selectedMove)){
+			assertTrue(true);
+		}
+	}
+
+	private boolean presetMoveSequence2Test(Game game, int selectedMove) {
+		for(int i=0; i<db.getMaxMovementCount()-1; i++){
+		if(game.isSheepBeenMoved() && !game.isShepherdBeenMoved()){	
+		moveSequenceCheckTest();
+			}
+		}
+		return false;
+	}
+
+	private boolean presetMoveSequence1Test(Game game, int selectedMove) {
+		for(int i=0; i<db.getMaxMovementCount(); i++){
+		if(game.isCardBeenBought() && !game.isShepherdBeenMoved()){
+			moveSequenceCheckTest();
+			}
+		}
+		
+		return false;
+	}
+	
+	@Test
+	public void isPositionBusyTest(){
+		Position pos = new Position();
+		assertNotNull(pos.isObjOverPos());
+	}
+	
+	@Test
+	public void isPositionAdjacentTest(){
+		Position pos1 = new Position();
+		Position pos2 = new Position();
+		CheckMove.isPositionAdjacent(pos1, pos2);
+		if(pos1.getAllAdjPosAroundThis().contains(pos2) || pos2.getAllAdjPosAroundThis().contains(pos1)){
+			assertTrue(true);
+		}
+	}
+		
+		@Test
+		public void findRegionsWithSamePosTest(){
+			
+			//reg
+			List<Region> allRegions = new ArrayList<Region>();
+			allRegions.add(new Region(0, null, "hill"));
+			allRegions.add(new Region(1, null, "hill"));
+			
+			//pos
+			List<Position> adjPos = new ArrayList<Position>();
+			Position checkpos = new Position(0,0);
+			adjPos.add(checkpos);
+			adjPos.add(new Position(1,0));
+			
+			//set poss
+			allRegions.get(0).setAdjPositions(adjPos);
+			allRegions.get(1).setAdjPositions(adjPos);
+			
+			//check
+			List<Region> adjregfound = CheckMove.findRegionsWithSamePos(allRegions, checkpos);
+			
+			
+			assertTrue(
+					adjregfound.get(0) == allRegions.get(0)
+					&&
+					adjregfound.get(1) == allRegions.get(1)
+					);
+			
+		}
+		
+		@Test
+		public void findSecondRegionWithSamePosTest(){
+
+			Game game = new Game();
+			ViewerInterface mainGameViewer = new Console(game);
+			
+			//reg
+			List<Region> allRegions = new ArrayList<Region>();
+			allRegions.add(new Region(0, null, "hill"));
+			allRegions.add(new Region(1, null, "hill"));
+			
+			//pos
+			List<Position> adjPos = new ArrayList<Position>();
+			Position checkpos = new Position(0,0);
+			adjPos.add(checkpos);
+			adjPos.add(new Position(1,0));
+			
+			//set poss
+			allRegions.get(0).setAdjPositions(adjPos);
+			allRegions.get(1).setAdjPositions(adjPos);
+			
+			//check
+			Region ckregion = CheckMove.findSecondRegionWithSamePos(allRegions, checkpos, 0, mainGameViewer);
+			
+			assertTrue(ckregion.getRegionIdentifier()==1);
+			
+		}
+		
+
+}

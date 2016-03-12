@@ -1,0 +1,86 @@
+package game.client.view.gui;
+
+import game.client.rmi.StartClientRmi;
+import game.client.view.gui.model.Sheepland;
+import game.client.view.gui.model.SheeplandUpdate;
+import game.server.rmi.interfaces.AddPlayerInterface;
+
+import java.rmi.RemoteException;
+import java.util.List;
+
+/**
+ * RUNNABLE IN NEW THREAD
+ * THIS CLASS
+ * CHECK FROM SERVER FOR UPDATES
+ * EVERY N SECONDS
+ * AND CALL THE UPDATE METHODS FOR MAP
+ * 
+ * @author Leonardo
+ *
+ */
+public class AutoUpdateEngine {
+	
+	private AddPlayerInterface api;
+	
+	/**
+	 * Async execution
+	 * @throws InterruptedException
+	 */
+	public void asyncUpdateService(final int time, final Sheepland obj) throws InterruptedException{
+    	
+		//task used to create a thread
+        Runnable task = new Runnable() {
+            public void run() {
+                try {
+                	
+                	//Wait before start
+                	Thread.sleep(1000);
+                	
+            		//call engine
+            		manageUpdate(time, obj);
+
+                } catch (Exception ex) {
+                    //handle error which cannot be thrown back
+                }
+            }
+        };
+        
+        //run task in new thread
+        Thread counter = new Thread(task);
+        counter.start();
+        //..and the calling class can go ahead..
+    }
+	
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //ENGINE 1
+	
+    private void manageUpdate(int time, Sheepland obj) throws InterruptedException, ClassNotFoundException, RemoteException{
+        
+    	//retrieve interface
+    	api = StartClientRmi.getRemoteAddPlayerInterface();
+    	
+    	while(obj.isRunningGame()){
+    		
+    		//check and SET UPDATES
+    		obj.updateRegionBusy(api.getGuiRegionBusy());
+        	obj.updatePlayerShepherdPos(api.getGuiPlayersShepherdLoc());
+        	
+    		
+    		//wait for eventual repaints
+    		Thread.sleep(time);
+    		
+    		//call main update functions
+    		SheeplandUpdate.performUpdate(api);
+    		
+    		//wait between check for updates
+    		Thread.sleep(time);
+    		
+    		// -> next check until game ends
+    	}
+    	    
+    }
+        
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //SUB ENGINES
+    
+}

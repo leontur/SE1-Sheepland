@@ -1,0 +1,314 @@
+package game.server;
+
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
+import java.util.List;
+
+import game.server.interfaces.AddPlayerInterface;
+import game.server.model.Game;
+import game.server.model.Player;
+import game.server.model.Position;
+import game.server.model.Region;
+import game.server.model.Shepherd;
+import game.server.rmi.ManageRmi;
+import game.server.rmi.StartRmi;
+import game.server.rmi.WaitPlayer;
+
+
+/**
+ * RMI CLASS THAT ADD A NEW PLAYER 
+ * REQUESTED FROM CLIENT
+ * 
+ * @author Leonardo
+ *
+ */
+public class AddPlayer extends UnicastRemoteObject implements AddPlayerInterface {
+
+	//CLASS VARS
+	private static final long serialVersionUID = 1L;
+	
+	//CODE EXECUTION VARS
+	private static int thisGamePlayersNumber;
+	private Game game;
+
+	/**
+	 * CONSTRUCTOR
+	 * Set a 
+	 * @param game
+	 * @throws RemoteException
+	 */
+	public AddPlayer(Game game) throws RemoteException {
+		this.game = game;
+	}
+	
+	/**
+	 * Set the interface of the game
+	 */
+	public void setGameInterface(Game game) throws RemoteException{
+		this.game = game;
+	}
+
+	////////////////////////////////////////////////////////////////////
+	//CLIENT SET
+	
+	/**
+	 * RMI ONLY
+	 * return the counter id of the current player
+	 */
+	public int getCurrentPlayerNumbers() throws RemoteException {
+		return game.getCurrentPlayerCounter();
+	}
+
+	/**
+	 * RMI ONLY
+	 * called from client
+	 * add a new player
+	 * set the game counter +1
+	 * set the rmi counter +1
+	 * stop the waiting for this specific player
+	 */
+	public void addNewPlayer() throws RemoteException, NotBoundException, InterruptedException {
+		
+		//execute only if max player number was not reached
+		if(StartRmi.getPlayersNumber()<4){		
+			
+			//notify
+			System.out.println("Adding new player as ID: " + thisGamePlayersNumber);
+			
+			//set counter
+			game.setCurrentPlayerCounter(thisGamePlayersNumber);
+			
+			//even for the main waiting while
+			StartRmi.setPlayersNumber(thisGamePlayersNumber);
+			
+			//StopWaiting
+			WaitPlayer.setSync(true);
+		
+		}
+	}
+	
+	/**
+	 * RMI ONLY
+	 * called from client
+	 * get and set to game the player selective view
+	 */
+	public void setClientView() throws RemoteException, Exception {
+		//receive the client viewer
+		ManageRmi.requestViewerFromClient(thisGamePlayersNumber, game);
+	}
+	
+	/**
+	 * RMI ONLY
+	 * called from client
+	 * increment the current players id and return the new id for the new client
+	 */
+	public int getNewPlayerId() throws RemoteException{
+
+		//execute only if max player number was not reached
+		if(StartRmi.getPlayersNumber()<4){
+			
+			thisGamePlayersNumber++;
+			return thisGamePlayersNumber;
+			
+		}else{
+			return -1;
+		}
+	}
+	
+	/**
+	 * True if the game runs or false if the game 
+	 * doesen't run
+	 */
+	public boolean isRunningGame() throws RemoteException {
+		return game.isRunningGame();
+	}
+	
+	/**
+	 * Get the number of players of the current game
+	 */
+	public int getThisGamePlayersNumber() throws RemoteException {
+		return thisGamePlayersNumber;
+	}
+	
+	/**
+	 * Set the number of players of the current game
+	 */
+	public void setThisGamePlayersNumber(int newnum) throws RemoteException {
+		thisGamePlayersNumber = newnum;
+	}
+	
+	////////////////////////////////////////////////////////////////////
+	//GUI MANAGE
+	//USED FOR BOTH RMI AND SOCKET
+
+	public List<int[]> getGuiRegionBusy() throws RemoteException {
+		
+		//list index: region id
+		//[0] sheep
+		//[1] bsheep
+		//[2] wolf
+		
+		List<int[]> regionBusy = new ArrayList<int[]>();
+		
+		for(Region re : game.getGameAllRegions()){
+			int[] loc = new int[3];
+			loc[0] = re.getAllSheeps().size();
+			loc[1] = re.getAllBlackSheeps().size();
+			loc[2] = re.getWolf() == null ? 0 : 1;
+			regionBusy.add(loc);
+		}		
+		return regionBusy;
+	}
+	
+	public List<List<Integer>> getGuiPlayersShepherdLoc() throws RemoteException {
+		
+		//main list index: player id
+			//inside list: each entry is a new shepherd position 
+			//(cover bough cases of 2 or many players)
+		
+		//check if player not initialized yet
+		if(!game.isAllPlayersInitialized()){
+			return null;
+		}
+		
+		List<List<Integer>> playerShepherdPos = new ArrayList<List<Integer>>();
+				
+		//retrieve shepherds pos for all players
+		for(Player pl : game.getGamePlayers()){
+			
+			List<Integer> tmp = new ArrayList<Integer>();
+			
+			for(Shepherd sh : pl.getPlayerShepherdsList()){
+				tmp.add(sh.getCurrShepherdTarget().getPosIdentifier());
+			}
+			
+			playerShepherdPos.add(tmp);	
+		}		
+		
+		return playerShepherdPos;
+	}
+	
+	/**
+	 * Get the number of available dinars for the requested player
+	 */
+	public int getGuiPlayerDinar(int player) throws RemoteException{
+		return game.getGamePlayers().get(player).getCountOfRemainingDinars();
+	}
+	
+	/**
+	 * Get the number of the initial card for the requested player
+	 */
+	public int getGuiPlayerInitialCard(int player) throws RemoteException{
+		return game.getGamePlayers().get(player).getInitialCards().getInitialCardIdentifier();
+	}
+	
+	/**
+	 * Get the number of the standard cards for the requested player
+	 */
+	public List<List<String>> getGuiPlayerStandardCards(int player) throws RemoteException{
+		
+		//list of id of owned cards
+		//index 0: value   1: type
+		
+		List<List<String>> owned = new ArrayList<List<String>>();
+
+		//for each card of this type (owned by player)
+		for(game.server.model.StandardCard sc : game.getGamePlayers().get(player).getOwnedCards()){
+			List<String> tmp = new ArrayList<String>();
+			tmp.add(Integer.toString(sc.getCardValue()));
+			tmp.add(sc.getInitialCardPlotType());
+			owned.add(tmp);
+		}
+		
+		return owned;
+	}
+	
+	/**
+	 * Get the location of the shepherd
+	 */
+	public List<List<Integer>> getGuiShepherdLoc() throws RemoteException {
+		
+		//main list index: player
+			//nested list: 
+			//list index: shepherd id
+			//list value: shepherd pos
+		
+		List<List<Integer>> player = new ArrayList<List<Integer>>();
+		List<Integer> shepherdsPos = new ArrayList<Integer>();
+		
+		//for each player
+		for(Player pl : game.getGamePlayers()){
+			
+			shepherdsPos.clear();
+			
+			//for each shepherd of player
+			for(Shepherd sh : pl.getPlayerShepherdsList()){
+				//create pos list
+				shepherdsPos.add(sh.getCurrShepherdTarget().getPosIdentifier());
+			}
+			
+			player.add(shepherdsPos);
+		}
+		
+		return player;
+	}
+
+	/**
+	 * Get the number of the remaining standard enclosure
+	 */
+	public int getGuiStandardEnclosures() throws RemoteException {
+		
+		return game.getRemainingStandardEnclosuresNum();
+	}
+
+	/**
+	 * Get the number of the remaining final enclosure
+	 */
+	public int getGuiFinalEnclosures() throws RemoteException {
+		
+		return game.getRemainingFinalEnclosuresNum();
+	}
+
+	/**
+	 * Get the status of occupation of all positions
+	 */
+	public List<Integer> getGuiPositionEnclosureBusy() throws RemoteException{
+		
+		
+		//index: is the position id
+		//value: 0=free  1:stdencl  2:finencl
+		
+		List<Integer> posstatus = new ArrayList<Integer>();
+		
+		for(Position pos : game.getGameAllPositions()){
+			
+			//check
+			if(pos.isPosOccupiedByStdEnclosure()){
+				posstatus.add(1);
+			}else if(pos.isPosOccupiedByFinEnclosure()){
+				posstatus.add(2);
+			}else{
+				posstatus.add(0);
+			}
+			
+		}
+
+		return posstatus;
+	}
+	
+	/**
+	 * Get the number of the last dice
+	 */
+	public int getGuiLastDiceNum() throws RemoteException{
+		return game.getLastDiceNum();
+	}
+	
+	/**
+	 * Get the number of the current player
+	 */
+	public int getGuiCurrentPlayerNumber() throws RemoteException{
+		return game.getCurrentPlayerCounter();
+	}
+}

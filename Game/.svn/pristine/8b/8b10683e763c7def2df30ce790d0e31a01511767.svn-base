@@ -1,0 +1,122 @@
+package game.client.view.gui;
+
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.Timer;
+
+/**
+ * MOVABLE OBJECT
+ * Add the ability to move smoothly from a place to another (with moveTo())
+ * 
+ * @author Leonardo
+ */
+public class MovableObject extends InteractiveObject {
+	
+	/**
+	 * CLASS SERIAL VERSION ID
+	 */
+	private static final long serialVersionUID = 1L;
+	
+	/**
+	 * ANIMATION VARS
+	 */
+	private static final int DELAY_MILLISEC = 10;
+	private static final long DURATION_MULTIPLIER = (long) 1E5;
+	
+	private long starTime;
+	private long animationTime;
+	private Point startPoint;
+	private Point endPoint;
+	private boolean isAnimating;
+	
+	//shift for pawn movement
+	private int shiftX = 25;
+	private int shiftY = shiftX;
+
+	///////////////////////////////////////////////////////////////////////////
+	
+	/**
+	 * Init a new animation to the new point
+	 * A new call interrupt the previous
+	 * 
+	 * @param animToPoint the destination poin of the screen
+	 * @param animTimeMillisec the animation time in milliseconds
+	 */
+	public void moveTo(Point animToPoint, int animTimeMillisec) {
+		this.starTime = System.nanoTime();
+		this.animationTime = (long)(animTimeMillisec*DURATION_MULTIPLIER);
+		this.startPoint = getBounds().getLocation();
+		this.endPoint = animToPoint;
+		this.isAnimating = true;
+		doNewAnimation();
+	}
+
+	/**
+	 * ANIMATION PERFORMING METHOD
+	 */
+	private void doNewAnimation() {
+
+		//TASK: called every DELAY_MILLISEC
+		ActionListener animationMovementTask = new ActionListener() {
+
+			//LISTENER: waiting for function completion
+			public void actionPerformed(ActionEvent event) {
+				
+				//request the engine
+				doNewAnimationEngine(event);
+			}
+		};
+
+		//TIMER: call the task
+		Timer timer = new Timer(DELAY_MILLISEC, animationMovementTask);
+		timer.start();
+	}
+	
+	/**
+	 * ENGINE FOR ANIMATION
+	 * REQUESTED BY LISTENER 
+	 * ON ACTION PERFORMED
+	 */
+	private void doNewAnimationEngine(ActionEvent event){
+		
+		//get system time
+		long now = System.nanoTime();
+		
+		//animation progress
+		double animProgress =  now < starTime ? 
+						   0 : now > (starTime + animationTime) ?
+						   1 : (double)(now - starTime) / (double)animationTime ;
+						   
+		//animation transforms
+		//1 linear (by default)
+	   	//2 convex function: slow to fast => progress = Math.pow(animProgress, 5);
+		//3 concave: fast to slow =>
+		animProgress = Math.pow(animProgress, (double)1/3.1);
+		
+		//calculate new position
+		double newX = startPoint.x + (endPoint.x - shiftX - startPoint.x)*animProgress;
+		double newY = startPoint.y + (endPoint.y - shiftY - startPoint.y)*animProgress;
+		
+		//parse new position
+		Point newPosition = new Point((int)newX,(int)newY);
+
+		//check if the animation must stop
+		if(animProgress == 1) {
+			((Timer)event.getSource()).stop();
+			isAnimating = false;
+		}
+		
+		//set the point-to-point location
+		MovableObject.this.setLocation(newPosition);
+	}
+
+	/**
+	 * Animation status getter
+	 * @return if an animation is running
+	 */
+	public boolean isAnimating() {
+		return this.isAnimating;
+	}
+	
+}

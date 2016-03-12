@@ -1,0 +1,25 @@
+package game.server.socket;
+
+import game.server.model.Game;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * 
+ * SERVER SOCKET
+ * CONNECTION CLASS
+ * 
+ * GET PLAYERS AND START GAME IN NEW THREAD
+ * 
+ * @author Leonardo
+ *
+ */
+public class StartSocket {
+
+	//GAME VARS
+	private static List<Game> runningGames = new ArrayList<Game>();
+	private static final int PORT = 1099;
+	
+	
+}

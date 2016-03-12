@@ -1,0 +1,295 @@
+package game.client.view.gui;
+
+import game.client.rmi.interfaces.ClientConsoleInterface;
+import game.client.view.gui.model.*;
+
+import java.awt.Component;
+import java.awt.Point;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.rmi.RemoteException;
+import java.util.List;
+
+import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
+
+/**
+ * MOVEMENT CONTROLLER
+ * MAIN CLASS
+ * 
+ * @author Leonardo
+ */
+public class MovementsController implements MouseListener {
+	
+	/**
+	 * CLASS VARS
+	 */
+	private Object selectedObj;
+	private List<Object> allObjList;
+	private static DestinationDatabase ddb = new DestinationDatabase();
+	private boolean canMove;
+	private int rX, rY, rC;
+	private double pX, pY;
+	private static boolean catcher = false;
+	private static int catcherScope = 0;
+	private static Sheepland sheepland;
+	
+	/**
+	 * CLASS CONSTRUCTOR
+	 */
+	public MovementsController(List<Object> allObjList) {
+		selectedObj = null;
+		this.allObjList = allObjList;
+	}
+
+	//////////////////////////////////////////////////////////////////////////
+	
+	/**
+	 * MOUSE CLICK EVENT LISTENER
+	 */	
+	public void mousePressed(MouseEvent ev) {
+		
+		if(SwingUtilities.isLeftMouseButton(ev)){
+			
+			// <<<<<<<<<<<<DEBUG>>>>>>>>>>>>  //TODO
+			System.out.println("x: " + ev.getX() + "   y: " + ev.getY());
+			
+			//CHECK IF CAPTCHER MODE
+			if(!catcher){
+				//start std movement controller
+				movePerformStandardAction(ev);
+			}else{
+				//print on console for server
+				try {
+					
+					clickOnPointGetId(ev);
+					
+				} catch (Exception e) {
+//TODO LOGGER
+					e.printStackTrace();
+				}
+			}
+			
+		}else if (SwingUtilities.isRightMouseButton(ev)){
+			
+			//TODO METTERE ZOOM REGIONE ON CLICK?!
+					
+			;
+		}
+		
+	}
+
+	/**
+	 * ACTION
+	 * @param e : mouse event (click)
+	 */
+	private void movePerformStandardAction(MouseEvent e) {
+		
+		Object objUnderMouse = null;
+		
+		//find the object that has the mouse over
+		Point mousePos = e.getPoint();
+		
+		//for each object
+		for(Object obj : allObjList) {
+			//check if the mouse cursor is inside the object's rectangular region
+			if(((Component) obj).getBounds().contains(mousePos)){
+				objUnderMouse = obj;
+				break;
+			}
+		}
+		
+		//if there is an object under mouse -> the user wants to select
+		if(objUnderMouse != null) {
+			
+			//save reference to the old selected obj
+			Object lastSelObj = selectedObj;
+			
+			//save the reference to the obj that is under the mouse pointer
+			//e.getSource()
+			selectedObj = objUnderMouse;
+			
+			//mark obj as selected
+			((SelectableObject) selectedObj).setIsSelected(true);
+			
+			//deselect the last obj
+			if(lastSelObj != null && lastSelObj != selectedObj){
+				((SelectableObject) lastSelObj).setIsSelected(false);
+			}
+			
+		}else{
+		//if there is no object under mouse -> the user wants to move
+			
+			//vars
+			int i;
+			canMove = false;
+						
+			//CHECK THE KIND OF SELECTED OBJECT
+			if(selectedObj instanceof Sheep || selectedObj instanceof SheepBlack){
+			//if sheep or bsheep
+				
+				//CHECK IF IN AREA OF A REGION
+				for(i=0; i<ddb.getRegionsCenterCoords().size(); i++){
+										
+					//region
+					rX = ddb.getRegionsCenterCoords().get(i)[0];
+					rY = ddb.getRegionsCenterCoords().get(i)[1];
+					rC = ddb.getRegionsCenterCoords().get(i)[2];
+					
+					//point
+					pX = e.getPoint().getX();
+					pY = e.getPoint().getY();
+					
+					//check if in area
+					if(Math.abs(rX-pX) <= rC && Math.abs(rY-pY) <= rC){
+						canMove = true;
+						break;
+					}
+				}
+				
+			}else if(selectedObj instanceof Shepherd){
+			//is shepherd
+				
+				//CHECK IF IN AREA OF A POSITION
+				for(i=0; i<ddb.getPositionsCenterCoords().size(); i++){
+									
+					//position
+					rX = ddb.getPositionsCenterCoords().get(i)[0];
+					rY = ddb.getPositionsCenterCoords().get(i)[1];
+					rC = ddb.getPositionsCenterCoords().get(i)[2];
+					
+					//point
+					pX = e.getPoint().getX();
+					pY = e.getPoint().getY();
+					
+					//check if in area
+					if(Math.abs(rX-pX) <= rC && Math.abs(rY-pY) <= rC){
+						canMove = true;
+						break;
+					}
+				}
+				
+			}
+
+			//PERFORM MOVEMENT			
+			if(canMove){
+				doMoveTo(selectedObj, e.getPoint());
+			}else{
+				//deselect
+				//and not do any post movement
+				if(selectedObj!=null){
+					((SelectableObject) selectedObj).setIsSelected(false);
+					selectedObj = null;
+				}
+			}
+		}
+	}
+	
+	//MOVEMENT PERFORMER
+	private void doMoveTo(Object selectedObj, Point p){
+		
+		//if was selected an object to move
+		if(selectedObj != null) {
+			
+			//calculate distance to perform move (pitagora)
+			int distance = (int) Math.sqrt(
+					Math.pow(((JComponent) selectedObj).getX() - pX, 2.0) +
+					Math.pow(((JComponent) selectedObj).getY() - pY, 2.0)
+					);
+			
+			//MOVEMENT CALL
+			((MovableObject) selectedObj).moveTo(p, distance*10);
+		}
+		
+	}
+	
+	
+	/**
+	 * RETURN TO SERVER THE ID OF SELECTED POINT
+	 * 
+	 * @param e : mouse event (click)
+	 * @throws RemoteException 
+	 */
+	private void clickOnPointGetId(MouseEvent e) throws RemoteException {
+		
+		int i, id = 0;
+		
+		if(catcherScope == 1){
+			//return position id
+			
+			//CHECK IF IN AREA OF A POSITION
+			for(i=0; i<ddb.getPositionsCenterCoords().size(); i++){
+								
+				//position
+				rX = ddb.getPositionsCenterCoords().get(i)[0];
+				rY = ddb.getPositionsCenterCoords().get(i)[1];
+				rC = ddb.getPositionsCenterCoords().get(i)[2];
+				
+				//point
+				pX = e.getPoint().getX();
+				pY = e.getPoint().getY();
+				
+				//check if in area
+				if(Math.abs(rX-pX) <= rC && Math.abs(rY-pY) <= rC){
+					id = i;
+					break;
+				}
+			}
+			
+			sheepland.setValueToSend(id);
+			
+		}else if(catcherScope == 2){
+			//return region id
+			
+			//CHECK IF IN AREA OF A REGION
+			for(i=0; i<ddb.getRegionsCenterCoords().size(); i++){
+									
+				//region
+				rX = ddb.getRegionsCenterCoords().get(i)[0];
+				rY = ddb.getRegionsCenterCoords().get(i)[1];
+				rC = ddb.getRegionsCenterCoords().get(i)[2];
+				
+				//point
+				pX = e.getPoint().getX();
+				pY = e.getPoint().getY();
+				
+				//check if in area
+				if(Math.abs(rX-pX) <= rC && Math.abs(rY-pY) <= rC){
+					id = i;
+					break;
+				}
+			}
+			
+			sheepland.setValueToSend(id);
+		}
+		
+		catcher = false;
+	}
+	
+	
+	//LISTENER INTERFACE EVENTS
+	public void mouseEntered(MouseEvent e) {}
+	public void mouseExited(MouseEvent e) {}
+	public void mouseReleased(MouseEvent e) {}
+	public void mouseClicked(MouseEvent ev) {}
+	
+	
+	/**
+	 * FOR TURN UPDATE REQUEST:
+	 * SET THE CONTROLLER AS COORD CAPTCER
+	 * SCOPE is to print on console (remote)
+	 * 	1: the selected position id
+	 * 	2: the selected region id
+	 * 	3: the selected plot type id
+	 *  4: the selected move type
+	 *  5: the selected shepherd id
+	 * 
+	 * NOTE: catcher is automatically resetted to false at the end of the request
+	 */
+	public static void setCatcher(boolean status, int scope, Sheepland sl){
+		catcher = status;
+		catcherScope = scope;
+		sheepland = sl;
+	}
+
+}

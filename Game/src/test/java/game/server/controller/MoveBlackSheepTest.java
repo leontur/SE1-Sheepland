@@ -1,0 +1,121 @@
+package game.server.controller;
+	
+import static org.junit.Assert.*;
+
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+import java.util.List;
+	
+
+import javax.rmi.CORBA.Util;
+
+import game.server.model.Dice;
+import game.server.model.Game;
+import game.server.model.Position;
+import game.server.model.Region;
+import game.server.model.Sheep;
+import game.server.model.SheepBlack;
+	
+import game.server.view.Console;
+import game.server.view.ViewerInterface;
+
+import org.junit.Test;
+
+/**
+ * MOVE MANAGEMENT-TEST CLASS
+ * For BlackSheeps auto and manual move
+ * @author Dario
+ *
+ */
+public class MoveBlackSheepTest {
+		
+	public MoveBlackSheep tester;
+	
+	/**
+	 * private constructor test
+	 */
+	@Test
+	public void constructorTest(){
+		try {
+			Constructor<Util> c = Util.class.getDeclaredConstructor();
+			c.setAccessible(true);
+			c.newInstance();
+		} catch (Exception e) {;}
+		
+		assertTrue(true);
+	}
+	
+	/**
+	* Check if the  black sheep automatically jumps
+	*/
+	@Test
+	public void moveBlackSheepAutoJumpTest(){
+		
+		Game game = new Game();
+		ViewerInterface mainGameViewer = new Console(game);
+		Dice dice = new Dice();
+		SheepBlack bsheep = new SheepBlack(0, null);
+		
+		//reg
+		List<Region> allRegions = new ArrayList<Region>();
+		allRegions.add(new Region(0, null, "hill"));
+		allRegions.add(new Region(1, null, "hill"));
+		
+		//pos
+		List<Position> adjPos = new ArrayList<Position>();
+		Position checkpos = new Position(0,1);
+		adjPos.add(checkpos);
+		adjPos.add(new Position(1,0));
+		
+		//set poss
+		allRegions.get(0).setAdjPositions(adjPos);
+		allRegions.get(1).setAdjPositions(adjPos);
+		
+		//set values
+		game.setGameAllRegions(allRegions);
+		bsheep.setTarget(allRegions.get(0));
+		
+		//check
+		MoveBlackSheep.moveBlackSheepAutoJump(game, bsheep, allRegions, dice, mainGameViewer, true);
+		assertTrue(bsheep.getTarget().getRegionIdentifier() == 1);
+	}
+	
+	/**
+	 * Check if the black sheep moves beetween the regions 
+	 */
+	 @Test
+	 public void moveBlackSheepBetweenRegions(){
+		 
+		Game game = new Game();
+		ViewerInterface mainGameViewer = new Console(game);
+		SheepBlack bsheep = new SheepBlack(0, null);
+		
+		//reg
+		List<Region> allRegions = new ArrayList<Region>();
+		allRegions.add(new Region(0, new Sheep(), "hill"));
+		allRegions.add(new Region(1, new Sheep(), "hill"));
+		
+		//pos
+		List<Position> adjPos = new ArrayList<Position>();
+		Position checkpos = new Position(0,1);
+		adjPos.add(checkpos);
+		adjPos.add(new Position(1,0));
+		
+		//set poss
+		allRegions.get(0).setAdjPositions(adjPos);
+		allRegions.get(1).setAdjPositions(adjPos);
+		
+		//set values
+		game.setGameAllRegions(allRegions);
+		bsheep.setTarget(allRegions.get(0));
+		allRegions.get(0).addANewBlackSheep(bsheep);
+		
+		//check
+		MoveBlackSheep.moveBlackSheepBetweenRegions(game, allRegions.get(0), allRegions.get(1), mainGameViewer, true);
+		
+		//check
+		assertTrue(bsheep.getTarget().getRegionIdentifier() == 1);
+		
+	}
+	
+}

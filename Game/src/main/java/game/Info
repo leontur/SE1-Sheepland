@@ -1,0 +1,70 @@
+
+	******* SHEEPLAND PROJECT *******
+		
+  			> Group 14
+  			> Turchi - Rosolia
+  			
+	******* POLIMI | 05-06/2014  *******
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	GAME STRUCTURE
+	----------------------
+	
+	-GAME
+	|
+	|	-CLIENT
+	|	|	-RMI
+	|	|	-SOCKET
+	|	|	-VIEW
+	|		|	-GUI
+	|			
+	|	-SERVER
+	|	|	-RMI
+	|	|	-SOCKET
+	|	|	-MODEL
+	|	|	-CONTROLLER
+	|	|	-VIEW
+	|	
+
+	
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	GAME ADDITIONAL FEATURE
+	----------------------
+	
+	-wolf additional rule implemented
+	
+	-graphical gui
+		can substitute all the keyboard inputs, it can connect to server either in socket or rmi mode
+	
+	-game turn timeout
+		continue to next player if one not perform move in the given time
+		
+	-handling of a client disconnection
+		in case of disconnection of a client, the game could continue with other players
+		
+	-notification banners
+		during the game or the turn
+		
+	-client input mode 
+		allow to select and switch (at any moment) between console (key) or gui (click) input
+	
+	-client connection selection with gui
+		allow the user to select the wanted connection on game's begin
+	
+	-gui console viewer
+		in case of game's use without eclipse, the console print can be read on the related window
+	
+	-sounds in turns
+		reproduce a sound in case of moves, notify
+	
+	-on click dx over a region
+		info-banner for that region for its details
+	
+	-custom logger (log to console and write to file)
+		log history of the game and errors
+		
+	
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	

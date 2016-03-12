@@ -1,0 +1,48 @@
+package game.client.view.gui;
+
+import game.client.view.gui.model.Sheepland;
+
+import javax.swing.SwingUtilities;
+
+/**
+ * GUI INITIALIZER MAIN CLASS
+ * CREATED AND REQUESTED AS NEW THREAD
+ * 
+ * @author Leonardo
+ */
+public class GuiInitializer implements Runnable {
+		
+	public void run() {
+
+		//Execute the operations involving the GUI on the graphics thread
+		SwingUtilities.invokeLater(new Runnable()
+		{
+			public void run()
+			{
+				try{
+					
+					//create a new instance
+					Sheepland sheepland = new Sheepland();
+					
+					//populate
+					sheepland.populateAll();
+
+					//start moves async services
+					try {
+						new AutoMoveEngine().asyncMoveService(12000, 200,"Sheepland", "gif4", false, null, sheepland, 80);
+						new AutoMoveEngine().asyncMoveService(35000, 800,"Sheepland", "gif1", false, null, sheepland, 200);
+						new AutoMoveEngine().asyncMoveService(25000, 900,"Sheepland", "gif3a", false, null, sheepland, 12);
+					} catch (InterruptedException e) {}
+					
+					//show
+					sheepland.setVisible(true);
+					
+				}catch (Exception e){
+					e.printStackTrace();
+					System.out.println("An error was occurred in the game's gui, please restart client. \nError: " + e);
+				}
+			}
+		});
+	}
+
+}

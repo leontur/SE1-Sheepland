@@ -1,0 +1,1172 @@
+package game.server.view;
+
+
+import game.client.interfaces.ClientConsoleInterface;
+import game.server.controller.*;
+import game.server.interfaces.*;
+import game.server.model.*;
+
+import java.awt.GridLayout;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.rmi.RemoteException;
+import java.rmi.registry.Registry;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
+/**
+ * 
+ * CONSOLE TEXTUAL GAME CONTROL
+ * 
+ * IMPLEMENTS THE VIEWER INTERFACE
+ * 
+ * @author Leonardo
+ *
+ */
+public class Console implements ViewerInterface {
+
+	/**
+	 * CLASS VARS
+	 */
+	private static DatabaseInterface db = new Database();
+	private ClientConsoleInterface cci;
+	private Game game;
+	private boolean isSocketMode = false;
+	
+	/**
+	 * GUI COMMANDS
+	 * Note: used from MapUpdate in game.client.view.gui
+	 */
+	String[] guiCmdList = new String[]{
+			"#player-name#",
+			"#new-shepherd-pos#",
+			"#shepherd-selection#",
+			"#move-type#",
+			"#move-target#",
+			"#sheep-to-move#",
+			"#b-sheep-to-move#",
+			"#game-status#",
+			"#show-notify#",
+			"#new-dice#",
+			"#plot-buy#"
+	};
+	
+	/**
+	 * SOCKET ADDITIONAL COMMANDS
+	 * Note: used for parsing and method call in clients
+	 */
+	String[] socketCmdList = new String[]{
+			"#clear-screen#",
+			"#play-sound#",
+			"#start-gui#"
+	};
+	
+	/**
+	 * DEFAULT CONSTRUCTOR
+	 * set a new game for a new console
+	 * @param game
+	 */
+	public Console(Game game){
+		this.game = game;
+		isSocketMode = game.isSocketMode();
+	}
+	
+	/**
+	 * GAME INTERFACE SETTER
+	 * Overrides the constructor
+	 * Set a new game interface for view list request
+	 * @return 
+	 */
+	public void setNewGameIf(Game game){
+		this.game = game;
+	}
+	
+	/**
+	 * GAME CONNECTION MODE SETTER
+	 * set true if is socket, else false for rmi
+	 */
+	public void setIsSocketMode(boolean mode){
+		isSocketMode = mode;
+	}
+	
+
+	/**
+	 * Main | GUI COMMAND OUT | method
+	 * 
+	 * SEND TWO STRINGS 
+	 * FIRST:  command (see array over)
+	 * SECOND: optional parameters (like message or coordinates)
+	 * 
+	 * @param message
+	 */
+	private void commandForClient(String command, String options){
+		
+		//SEND THE PRINT TO CLIENT (COMMAND FOR GUI RECOGNIZE)	
+		if(isSocketMode){
+			
+			//NOTE for socket the split char is ! (between command and options -> see private function)
+			//getting right socket
+			ServerSocket ss = game.getSocketViewerList().get(game.getCurrentPlayerCounter());
+			
+			//sending
+			socketStreamWriterToClient(ss, command+"!"+options, 1);
+			
+		}else{
+			
+			try{
+				cci = game.getViewerList().get(game.getCurrentPlayerCounter());
+				cci.receiveCommandFromServer(command, options);
+			}catch(Exception e){
+				CustomLogger.logInfoEx("Console", "commandForClient", "no client view to print", e);
+			}
+		}
+		
+		//send NOTIFY request for sound execution
+		if(command.equals(guiCmdList[8])){
+			playSoundOnClient("notifica");
+		}
+	}
+	
+	/**
+	 * Main str OUT method (system console)
+	 * Send the message to the current player
+	 * NOTE: to re-enable history logger: CustomLogger.logConsoleHistory("Console", "notifyAllClients", "ALL Players" + " | OUT | " + message);
+	 * @param message
+	 */
+	private void printToScreen(String message){
+		
+		//SEND THE PRINT TO CLIENT (ALL PRINTS)		
+		if(isSocketMode){
+			
+			//getting right socket
+			ServerSocket ss = game.getSocketViewerList().get(game.getCurrentPlayerCounter());
+			
+			//sending
+			socketStreamWriterToClient(ss, message, 0);
+			
+		}else{
+			try{
+				cci = game.getViewerList().get(game.getCurrentPlayerCounter());
+				cci.showOnClient(message);
+			}catch(Exception e){
+				CustomLogger.logInfoEx("Console", "printToScreen", "no client view to print", e);
+			}
+		}
+	}
+	
+	/**
+	 * Main str OUT
+	 * SEND TO ALL CLIENTS
+	 * @param message
+	 */
+	public void notifyAllClients(String message){
+		
+		//SEND THE PRINT TO ALL CLIENT (ALL PRINTS)		
+		if(isSocketMode){
+			//socket mode
+			for(ServerSocket ss : game.getSocketViewerList()){
+				//sending
+				socketStreamWriterToClient(ss, message, 0);
+			}
+		}else{
+			try{
+				//rmi mode
+				for(ClientConsoleInterface cl : game.getViewerList()){
+					cl.showOnClient(message);
+				}
+			}catch(Exception e){
+				CustomLogger.logInfoEx("Console", "notifyAllClients", "no client view to print", e);
+			}
+		}
+	}
+	
+	/**
+	 * Main str OUT
+	 * SEND TO OTHER CLIENTS (ALL BUT NOT CURRENT)
+	 * @param message
+	 */
+	private void notifyOtherClients(){
+		
+		String message = "player " + (game.getCurrentPlayerCounter() + 1) + " is performing a move, please wait..";
+		
+		//SEND THE PRINT TO ALL CLIENT (ALL PRINTS)		
+		if(isSocketMode){
+
+			int i=0;
+			for(ServerSocket ss : game.getSocketViewerList()){
+				if(i!=game.getCurrentPlayerCounter()){
+					//sending
+					socketStreamWriterToClient(ss, message, 0);
+				}
+				i++;
+			}
+
+		}else{
+			try{
+				for(ClientConsoleInterface cl : game.getViewerList()){
+					if(cl.getAssignedToPlayer() != game.getCurrentPlayerCounter()){
+							cl.showOnClient(message);
+					}
+				}
+			}catch(Exception e){
+				CustomLogger.logInfoEx("Console", "notifyOtherClients", "no client view to print", e);
+			}
+		}
+	}
+	
+	/**
+	 * Main int IN method
+	 * @return
+	 */
+	private int requestIntInput(){
+		//REQUEST FROM CLIENT
+		int req=0;
+		
+		if(isSocketMode){
+			
+			try {
+				//getting right socket
+				ServerSocket ss = game.getSocketViewerList().get(game.getCurrentPlayerCounter());
+				
+				//sending input request
+				socketStreamWriterToClient(ss, "input", 2);
+				
+				//waiting for client response
+		        Socket socket = ss.accept();
+		        
+		        //read socket to input stream 
+		        ObjectInputStream inputStream = new ObjectInputStream(socket.getInputStream());
+		        
+		        //convert stream to string and to int
+		        String message = (String) inputStream.readObject();
+		        req = Integer.parseInt(message);
+		        
+		        //closing
+		        inputStream.close();
+		        
+			}catch(Exception e){
+				CustomLogger.logInfoEx("Console", "requestIntInput", "no client view to print", e);
+			}
+			
+		}else{
+			try{
+				cci = game.getViewerList().get(game.getCurrentPlayerCounter());
+				req = cci.readFromClient();
+			}catch(Exception e){
+				CustomLogger.logInfoEx("Console", "requestIntInput", "no client view to print", e);
+			}
+		}
+		
+		return req;
+	}
+	
+	/**
+	 * Main str IN method
+	 * @return
+	 */
+	private String requestStrInput(){
+		//REQUEST FROM CLIENT
+		String req = null;
+		
+		if(isSocketMode){
+			//override for int input
+			req = Integer.toString(requestIntInput());
+		}else{
+			try{
+				cci = game.getViewerList().get(game.getCurrentPlayerCounter());
+				req = cci.readFromClientStr();
+			}catch(Exception e){
+				CustomLogger.logInfoEx("Console", "requestStrInput", "no client view to req", e);
+			}
+		}
+		return req;
+	}
+	
+	/**
+	 * Main str OUT TO CONSOLE
+	 * @param message
+	 */
+	public void printToConsole(String message){
+		System.out.println(message);
+	}
+	
+	/**
+	 * Check for remote clients (if are alive or disconnected)
+	 * return true if the client is connected, else false
+	 */
+	public boolean isClientAlive(int clientid){
+		if(isSocketMode){
+			try {
+				//getting right socket
+				ServerSocket ss = game.getSocketViewerList().get(game.getCurrentPlayerCounter());
+		        Socket socket = ss.accept();
+		        return socket.isBound();
+			} catch (Exception e) {			
+				CustomLogger.logInfoEx("Console", "isClientAlive", "Player: " + clientid + " | CHECK SOCKET | is not alive", e);
+				return false;
+			}
+		}else{
+			try{
+				cci = game.getViewerList().get(clientid);
+				cci.showOnClient("");
+				return true;
+			}catch(RemoteException e){
+				CustomLogger.logInfoEx("Console", "isClientAlive", "Player: " + clientid + " | CHECK RMI | is not alive", e);
+				return false;
+			}
+		}
+		
+	}
+	
+	/**
+	 * ADDITIONAL METHODS
+	 */
+	
+	/**
+	 * Clear console
+	 */
+	public void clearConsole(boolean toAll){
+		
+		if(toAll){
+			//SEND THE PRINT TO ALL CLIENT (ALL PRINTS)		
+			if(isSocketMode){
+				for(ServerSocket ss : game.getSocketViewerList()){						
+					socketStreamWriterToClient(ss, socketCmdList[0], 1);
+				}
+			}else{
+				try{
+					for(ClientConsoleInterface cl : game.getViewerList()){
+						cl.clearConsole();
+					}
+				}catch(Exception e){
+					CustomLogger.logInfoEx("Console", "clearConsole", "no client view to clear", e);
+				}
+			}
+		}else{
+			//SEND THE PRINT TO CLIENT (ALL PRINTS)
+			if(isSocketMode){
+				//getting right socket
+				ServerSocket ss = game.getSocketViewerList().get(game.getCurrentPlayerCounter());
+				//sending
+				socketStreamWriterToClient(ss, socketCmdList[0], 1);
+			}else{
+				try{
+					cci = game.getViewerList().get(game.getCurrentPlayerCounter());
+					cci.clearConsole();
+				}catch(Exception e){
+					CustomLogger.logInfoEx("Console", "clearConsole", "no client view to clear", e);
+				}
+			}
+		}
+	}
+	
+	/**
+	 * << SOCKET MAIN STREAM WRITER >>
+	 * generic printer to client function
+	 * 
+	 * MODE
+	 * 	-0 string (message) mode
+	 * 	-1 command mode (for remote recognize and execution)
+	 *  -2 input request (for remote sending of value to server)
+	 * 
+	 * OUTPUT STRUCTURE
+	 * 	(String) "[mode int]@[message str]"   
+	 * 	command messages are splitted by options by "!"
+	 * 
+	 * 	example:
+	 * 		0@hello
+	 * 		1@#new-dice#!optionssting
+	 * 
+	 */
+	private void socketStreamWriterToClient(ServerSocket ss, String message, int mode){
+				
+		try {
+			
+			//creating message string
+			String messageToSend = Integer.toString(mode) + "@" + message;
+			
+			//connecting
+	        Socket socket = ss.accept();
+	        
+	        //create socket output stream
+	        ObjectOutputStream outputStream = new ObjectOutputStream(socket.getOutputStream());
+	        
+	        //write to client
+	        outputStream.writeObject(messageToSend);
+	        
+	        //close stream
+	        outputStream.close();
+	        
+	        //wait for next r/w
+	        Thread.sleep(50);
+
+		}catch(Exception e){
+			CustomLogger.logInfoEx("Console", "socketStreamWriterToClient", "no client view to clear", e);
+		}
+		
+	}
+	
+	//END OF REMOTE CONTROL METHODS
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//START OF GAME LOGIC PRINTER METHODS
+	
+	/**
+	 * TEXTUAL GUI METHODS
+	 */
+	
+	/**
+	 * Ask user the number of every player
+	 */
+	public int askPlayersNumber() {
+		printToScreen("Insert number of players (min "+ Integer.toString(db.getTotPlayerMinNumber())+" max "+ Integer.toString(db.getTotPlayerMaxNumber())+"):");
+		return requestIntInput();
+	}
+
+	/**
+	 * Ask user the player name
+	 */
+	public String askPlayerName(int playerNumber) {
+		//Notify other clients
+		notifyOtherClients();
+		
+		//ask client
+		printToScreen("Player " + playerNumber + ", insert a new name: ");
+		
+		//send command to client
+		commandForClient(guiCmdList[0], Integer.toString(playerNumber));
+
+		return requestStrInput();
+	}
+
+	/**
+	 * Ask user for the new shepherd position
+	 */
+	public int askForNewShepherdPosition(int shepherd, String playerName) {
+		printToScreen(playerName + " insert a new position for shepherd " + shepherd);
+		
+		//send command to client
+		commandForClient(guiCmdList[8], "insert a new position for shepherd");
+		commandForClient(guiCmdList[1], "");
+
+		return requestIntInput();
+	}
+
+	/**
+	 * Ask user which shepherd is using in the current turn
+	 */
+	public int askWhichShepherd(String playerName) {		
+		printToScreen("");
+		printToScreen(" # " + playerName + ", select the shepherd for this turn (min "+ Integer.toString(1)+", max "+ Integer.toString(db.getTotShepherdVariantNumber())+"):");
+		
+		//send command to client
+		commandForClient(guiCmdList[8], "select the shepherd for this turn");
+		commandForClient(guiCmdList[2], "");
+		
+		return requestIntInput();
+	}
+
+	/**
+	 * Ask user what is his next move
+	 */
+	public int askForNewMoveType(String playerName, int remMoves) {	
+		printToScreen("------------------------------------------------");
+		printToScreen(playerName + " now is your turn, select the move:");
+		printToScreen(
+				  " 1. move shepherd" + "\n"
+				+ " 2. move sheep" + "\n"
+				+ " 3. buy terrain"
+				);
+		printToScreen(" remaining moves: " + remMoves);
+		
+		//send command to client
+		commandForClient(guiCmdList[8], "now is your turn, select the move");
+		commandForClient(guiCmdList[3], "");
+		
+		return requestIntInput();
+	}
+
+	/**
+	 * Ask user to move the target
+	 */
+	public int askForNewMoveTarget() {
+		printToScreen("Insert the destination for this move > ");
+		
+		//send command to client
+		commandForClient(guiCmdList[8], "click on the destination for this move");
+		commandForClient(guiCmdList[4], "");
+		
+		return requestIntInput();
+	}
+
+	/**
+	 * Ask user to move the sheep
+	 * and return true if he say yes
+	 * or false otherwise
+	 */
+	public boolean askForSheepToMove(int reg, int newreg) {
+		printToScreen("Do you want to move a white sheep from region " + reg + " to " + newreg + "?");
+		printToScreen("yes: 1 | no: 0");
+		
+		//send command to client
+		commandForClient(guiCmdList[5], reg + "#" + newreg);
+		
+		return requestIntInput() == 1 ? true : false;
+	}
+	/**
+	 * Ask user to move the black sheep
+	 * and return true if he say yes
+	 * or false otherwise
+	 */
+	public boolean askForBSheepToMove(int reg, int newreg) {
+		printToScreen("Do you want to move a black sheep from region " + reg + " to " + newreg + "?");
+		printToScreen("yes: 1 | no: 0");
+		
+		//send command to client
+		commandForClient(guiCmdList[6], reg + "#" + newreg);
+		
+		return requestIntInput() == 1 ? true : false;
+	}
+
+	/**
+	 * Ask user to know the status of the game
+	 * and return true if he say yes
+	 * or false otherwise
+	 */
+	public boolean askForGameStatus() {	
+		printToScreen("Show a game status summary?");
+		printToScreen("yes: 1 | no: 0");
+		
+		//send command to client
+		commandForClient(guiCmdList[7], "");
+		
+		return requestIntInput() == 1 ? true : false;
+	}
+
+	/**
+	 * Show a notify if is committed a not allowed move
+	 */
+	public void notifyNotAllowedMoveReAsk() {
+		//send command to client
+		commandForClient(guiCmdList[8], "not allowed move, retry");
+		
+		printToScreen("not allowed move, retry");
+	}
+
+	/**
+	 * Show a notify with the number of player if he committed an invalid selection
+	 */
+	public void notifyInvalidPlayersNumberSelection() {				
+		printToScreen("Invalid players' number selection.. retry");
+	}
+
+	/**
+	 * Show a notify with the cost of the move
+	 */
+	public void notifyMoveCost(int price) {
+		if(price>0){
+			printToScreen("the move done has cost of " + price + " dinar");
+		}else{
+			printToScreen("the move done has no cost");
+			}
+	}
+
+	/**
+	 * Show a notify if there are not adjacent position
+	 */
+	public void notifyNoAdjPosition() {
+		//send command to client
+		commandForClient(guiCmdList[8], "your dinars are not enough for the selected move, retry");
+		
+		printToScreen("there are no region with an adjacent position");
+	}
+
+	/**
+	 * Show a notify if the dinars are not enough for what you want to do
+	 */
+	public void notifyDinarsAreOut() {
+		//send command to client
+		commandForClient(guiCmdList[8], "your dinars are not enough for the selected move, retry");
+		
+		printToScreen("your dinars are not enough for the selected move, retry");
+	}
+
+	/**
+	 * Show a notify if the position is busy
+	 */
+	public void notifyPositionBusy() {
+		//send command to client
+		commandForClient(guiCmdList[8], "the selected position is busy by another pawn, retry");
+		
+		printToScreen("the selected position is busy by another pawn, retry");
+	}
+
+	/**
+	 * Show a notify for the black sheep to move 
+	 */
+	public void notifyBSheepAutoMove(boolean status) {
+		if(status){
+			printToScreen("the black sheep has been auto-moved");
+		}else{
+			printToScreen("the black sheep has not been auto-moved");
+		}
+	}
+
+	/**
+	 * Show a notify if the only move allowed is move the shepherd
+	 */
+	public void notifyMoveOnlyShepherd() {
+		//send command to client
+		commandForClient(guiCmdList[8], "only move you can do is to move shepherd");
+		
+		printToScreen("only move you can do is to move shepherd");
+	}
+
+	/**
+	 * Show a notify to see the current position
+	 */
+	public void notifyCurrentPosition(int pos) {
+		printToScreen("you sheperd is currently on the position " + pos);
+	}
+
+	/**
+	 * Show a notify with the previous and next position of the shepherd
+	 */
+	public void notifyMoveSuccessShepherd(int pos, int newpos) {
+		printToScreen("your shepherd's move was success from position " + (pos+1) + " to " + (newpos+1));
+	}
+
+	/**
+	 * Show a notify with the previous and next position of the sheep
+	 */
+	public void notifyMoveSuccessSheep(int sheep, int reg, int newreg) {
+		printToScreen("the white sheep "+ sheep +" has been moved from region " + (reg+1) + " to " + (newreg+1));
+	}
+
+	/**
+	 * Show a notify with the previous and next position of the black sheep
+	 */
+	public void notifyMoveSuccessBSheep(int bsheep, int reg, int newreg) {
+		printToScreen("the black sheep "+ bsheep +" has been moved from region " + (reg+1) + " to " + (newreg+1));
+	}
+	
+	/**
+	 * Show a notify if in the current turn the player have already moved a sheep
+	 */
+	public void notifyMoveAbortSheepAlreadyMoved(){
+		//send command to client
+		commandForClient(guiCmdList[8], "in this turn you have already moved a sheep");
+		
+		printToScreen("in this turn you have already moved a sheep");
+	}
+
+	/**
+	 * Show a notify if the black sheep is unable to move
+	 */
+	public void notifyMoveAbortBSheepAutoJump(String posBusyBy){
+		//send command to client
+		commandForClient(guiCmdList[8], "the black sheep has not been auto-moved due to position of dice occupied by: " + posBusyBy);
+		
+		printToScreen("the black sheep has not been auto-moved due to position of dice occupied by: " + posBusyBy);
+	}
+	
+	/**
+	 * Show a notify if is not possible do a certain move
+	 */
+	public void notifyMoveAbort() {
+		//send command to client
+		commandForClient(guiCmdList[8], "were not possible to do this move");
+		
+		printToScreen("were not possible to do this move");
+	}
+
+	/**
+	 * Show a notify if there are not sheep to move
+	 */
+	public void notifySheepsAreOut() {
+		//send command to client
+		commandForClient(guiCmdList[8], "there are no sheeps to move, please make a different move");
+		
+		printToScreen("there are no sheeps to move, please make a different move");
+	}
+
+	/**
+	 * Show a notify to bought a card
+	 */
+	public void notifyCardBought(int cardid, String plottype) {
+		printToScreen("your buy was success: plot type " + plottype + " | card id " + cardid);
+	}
+	
+	/**
+	 * Show a notify for a new turn
+	 */
+	public void notifyNewTurn() {
+		printToScreen("");
+		printToScreen("------------------------------------------------");
+		printToScreen("New turn");
+		//Notify other clients
+		notifyOtherClients();
+	}
+
+	/**
+	 * Show a welcome message
+	 */
+	public void showWelcomeMessage(){
+		notifyAllClients("");
+		notifyAllClients("");
+		notifyAllClients("");
+		notifyAllClients("*****  WELCOME ON SHEEPLAND  *****");
+		notifyAllClients("  > Group 14 | Turchi - Rosolia ");
+		notifyAllClients("  > POLIMI - 2014  ");
+		notifyAllClients("----------------------------------");
+		notifyAllClients("");
+	}
+	
+	/**
+	 * Show a notify to initialization the players
+	 */
+	public void showClientWelcome(int ply){
+		printToScreen("YOU ARE THE PLAYER " + ply);
+	}
+	
+	/**
+	 * Show a notify of the regions around the shepherd if there are
+	 */
+	public void showSheepsAroundShepherd(List<Region> regions) {
+		//input list is a list of regions around shepherd
+		
+		//send command to client
+		commandForClient(guiCmdList[8], "read it in the GuiConsole");
+		
+		printToScreen("Available regions around shepherd:");
+		
+		int n=1;
+		for(Region i : regions){
+			printToScreen("region " + n); 
+			printToScreen(" -plot type: " + i.getInitialCardPlotType());
+			printToScreen(" -identifier: " + i.getRegionIdentifier() + " | view number: " + (i.getRegionIdentifier()+1));
+			printToScreen(" -sheeps over: " + i.getAllSheeps().size());
+			printToScreen(" -black sheeps on: " + i.getAllBlackSheeps().size());
+			n++;
+		}
+		
+	}
+
+	/**
+	 * Show a notify of the available plot types around the shepherd if there are
+	 */
+	public int showPlotTypesAroundShepherd(List<Region> regions, int[] boughtTypes) {
+		//input list is a list of regions around shepherd
+		//input int[] is a list with the count of bought status of plot types
+		
+		//send command to client
+		commandForClient(guiCmdList[8], "available plot terrains are in the GuiConsole");
+		
+		printToScreen("Available plot types around shepherd:");
+		
+		int i, j=0;
+		List<String> availTypes = new ArrayList<String>();
+		
+		String cmdList = "";
+		for(i=0; i<regions.size(); i++){
+			if(!db.getCityTypes().contains(regions.get(i).getInitialCardPlotType())){
+				printToScreen("plot " + (i+1)); 
+				printToScreen(" -plot type: " + regions.get(i).getInitialCardPlotType());
+				printToScreen(" -region id: " + regions.get(i).getRegionIdentifier() + " | view number: " + (regions.get(i).getRegionIdentifier()+1) );
+				printToScreen(" -price in dinars: " + boughtTypes[db.getPlotTypes().indexOf(regions.get(i).getInitialCardPlotType())]);
+				cmdList = cmdList + (i==0 ? regions.get(i).getRegionIdentifier() : ("#"+regions.get(i).getRegionIdentifier()));
+				availTypes.add(regions.get(i).getInitialCardPlotType());
+				j++;
+			}else{
+				printToScreen("City " + (i+1)); 
+				printToScreen(" -cities cannot be purchased"); 
+			}
+		}
+		
+		printToScreen("which plot do you want to buy?");
+		printToScreen("  select 1 to " + i);
+		
+		//send command to client
+		commandForClient(guiCmdList[10], cmdList);
+		
+		//input
+		int in = requestIntInput();
+		int sel = 0;
+		
+		if(in>=1 && in<=j+1){
+			//get and return the correct type
+			sel = db.getPlotTypes().indexOf(availTypes.get(in-1));
+		}
+		
+		return sel;
+	}
+
+	/**
+	 * Show a notify to report to the players the cost of the available card and the map status
+	 */
+	public void showMapStatus(List<List<Region>> regionPileByPlotType, int[] boughtTypes, List<City> allCities, Wolf wolf) {
+		
+		printToScreen("");
+		printToScreen("MAP STATUS");
+		
+		int i, j;
+		
+		//for each plot type
+		for(i=0; i<regionPileByPlotType.size(); i++){
+			
+			printToScreen(" -region type: " + regionPileByPlotType.get(i).get(0).getInitialCardPlotType());
+			
+			//for each region in plot type
+			for(j=0; j<regionPileByPlotType.get(i).size(); j++){
+				printToScreen(
+						"   " + (j+1) + ". " + regionPileByPlotType.get(i).get(j).getAllSheeps().size() + " white sheeps" + " | " 
+						+ regionPileByPlotType.get(i).get(j).getAllBlackSheeps().size() + " black sheeps" + " | " 
+						+ (regionPileByPlotType.get(i).get(j).getWolf() != null ? "1" : "0") + " wolf" 
+						);
+			}
+			
+			printToScreen("   " + "the first available card has a cost of: " + boughtTypes[db.getPlotTypes().indexOf(regionPileByPlotType.get(i).get(0).getInitialCardPlotType())] + " dinars");
+		}
+		//for each city
+		for(i=0; i<allCities.size(); i++){
+			printToScreen(" -city type: " + allCities.get(i).getInitialCardPlotType());
+			printToScreen(
+					"   " + (i+1) + ". " + allCities.get(i).getAllSheeps().size() + " white sheeps" + " | " 
+					+ allCities.get(i).getAllBlackSheeps().size() + " black sheeps" + " | " 
+					+ (allCities.get(i).getWolf() != null ? "1" : "0") + " wolf" 		
+					);
+		}
+	}
+	
+	/**
+	 * Show a notify to report to the players the regions status
+	 */
+	public void showRegionStatus(List<Region> allRegions, List<City> allCities, Wolf wolf){
+		
+		printToScreen("");
+		printToScreen("REGIONS STATUS");
+		
+		int n;
+		
+		//regions
+		n=1;
+		for(Region rg : allRegions){
+			printToScreen("region " + n);
+			printToScreen(" -region id: " + rg.getRegionIdentifier());
+			printToScreen(" -region type: " + rg.getInitialCardPlotType());
+			
+			printToScreen(" -sheeps over: " + rg.getAllSheeps().size());
+			printToScreen(" -black sheeps over: " + rg.getAllBlackSheeps().size());
+			printToScreen(" -wolf over: " + (rg.getWolf() != null ? "1" : "0"));
+			
+			printToScreen(" -positions");
+			for(Position ps : rg.getBorders()){
+				printToScreen("   pos: " + (ps.getPosIdentifier()+1) + " | view dice value: " + ps.getPosViewVal());
+			}
+			
+			//excludes city
+			if(n==db.getRegionNum()){
+				break;
+			}
+			
+			n++;
+		}
+		
+		//cities
+		n=1;
+		for(City ci : allCities){
+			printToScreen("city " + n);
+			printToScreen(" -city id: " + ci.getRegionIdentifier());
+			printToScreen(" -city name: " + ci.getInitialCardPlotType());
+			
+			printToScreen(" -sheeps over: " + ci.getAllSheeps().size());
+			printToScreen(" -black sheeps over: " + ci.getAllBlackSheeps().size());
+			printToScreen(" -wolf over: " + (ci.getWolf() != null ? "1" : "0"));
+			
+			printToScreen(" -positions");
+			for(Position ps : ci.getAdjPositions()){
+				printToScreen("   pos: " + (ps.getPosIdentifier()+1) + " | view dice value: " + ps.getPosViewVal());
+			}
+			
+			n++;
+		}
+	}
+	
+	/**
+	 * Show a notify to report its status to the players
+	 */
+	public void showPlayerStatus(Player player, List<List<Region>> regionPileByPlotType) {
+
+		printToScreen("");
+		printToScreen("PLAYER STATUS > " + player.getThisPlayerName() + " < ");
+		
+		printToScreen(" - " + player.getCountOfRemainingDinars() + " dinars");
+		printToScreen(" - " + player.getCountOfOwnedCards() + " plot cards");
+		
+		for(int i=0; i< player.getCountOfOwnedCards(); i++){
+			printToScreen("   " + (i+1) + ". type: " + player.getOwnedCards().get(i).getInitialCardPlotType());
+		}
+
+		printToScreen(" - initial type of card: " + player.getInitialCards().getInitialCardPlotType());
+		
+		printToScreen(" - " + player.getPlayerShepherdsList().size() + " shepherd, in position: ");
+		
+		for(int j=0; j<player.getPlayerShepherdsList().size(); j++){
+			printToScreen("   " + (j+1) + ". pos: " + (player.getPlayerShepherdsList().get(j).getCurrShepherdTarget().getPosIdentifier() + 1));
+		}
+		
+	}
+	
+	/**
+	 * Show a notify to report to the players its score
+	 */
+	public void showPlayerScore(Player player, List<SheepBlack> allBSheeps, List<List<Region>> regionPileByPlotType){
+		
+		//send command to client
+		commandForClient(guiCmdList[8], "PLAYER SCORE > " + Integer.toString(player.getScore()));
+		
+		Counter.doStats(player, allBSheeps, regionPileByPlotType);
+		
+		printToScreen("PLAYER SCORE > " + player.getThisPlayerName() + " < ");
+		
+		printToScreen( "  > " + Integer.toString(player.getScore()));
+	}	
+
+	/**
+	 * Show the random number of the dice
+	 */
+	public void showNewRandomDice(int rnd) {
+		//send command to client
+		commandForClient(guiCmdList[9], Integer.toString(rnd));
+		//console
+		printToScreen("New dice random number: " + rnd);
+	}
+
+	/**
+	 * Show a notify to report to the players who is the winner
+	 */
+	public void notifyForWinner(Game game, List<List<Integer>> sortedlist) {
+
+		List<Player> players = game.getGamePlayers();
+		
+		notifyAllClients("****FINAL GAME SCORES****");
+		
+		for(int i=0; i<game.getPlayersNumber(); i++){
+			printToScreen("  player " + (i+1) + ". " + players.get(i).getThisPlayerName() + " > total score : " + players.get(i).getScore() + "");
+		}
+		
+		notifyAllClients(" --> THE WINNER IS PLAYER " + sortedlist.get(0).get(0) + " ! ");
+		
+		//send command to client
+		commandForClient(guiCmdList[8], "THE WINNER IS PLAYER " + sortedlist.get(0).get(0) + " ! ");
+		
+	}
+	
+	
+	/**
+	 * ADDITIONAL RULES
+	 */
+	
+	/**
+	 * Notify the movement of the wolf
+	 */
+	public void notifyWolfAutoMove(boolean status){
+		if(status){
+			printToScreen("the wolf has been auto-moved");
+		}else{
+			printToScreen("the wolf has not been auto-moved");
+		}
+	}
+	
+	/**
+	 * Show a notify to report that the wolf has been moved between two regions
+	 */
+	public void notifyMoveSuccessWolf(int reg, int newreg){
+		printToScreen("the wolf has been moved from region " + (reg+1) + " to " + (newreg+1));
+	}
+	
+	/**
+	 *  Show a notify to report that the wolf has been auto-moved
+	 */
+	public void notifyMoveOverrideWolfAutoJump(String posBusyBy){
+		printToScreen("the wolf has been auto-moved with override, because the position of dice was occupied by: " + posBusyBy);
+	}
+	
+	/**
+	 * Show a notify to report that the wolf has not been auto-moved
+	 */
+	public void notifyMoveAbortOverrideWolfAutoJump(String posBusyBy){
+		printToScreen("the wolf has not been auto-moved due to position of dice occupied by: " + posBusyBy);
+	}
+	
+	/**
+	 * Show a notify to report if the wolf eats a sheep o less
+	 */
+	public void notifyWolfAutoEat(boolean status){
+		if(status){
+			//send command to client
+			commandForClient(guiCmdList[8], "the wolf ate a sheep");
+			
+			printToScreen("the wolf ate a sheep");
+		}else{
+			//send command to client
+			commandForClient(guiCmdList[8], "the wolf did not eat any sheep beacuse they were not present in the region");
+			
+			printToScreen("the wolf did not eat any sheep beacuse they were not present in the region");
+		}
+	}
+	
+	/**
+	 * ONLINE GAME RULES
+	 */
+	
+	/**
+	 * Show all object on registry
+	 */
+	public void showAllObjectsOnRegistry(Registry registry){
+		//get objects
+		String[] obj = null;
+		try {
+			obj = registry.list();
+		}catch(Exception e){
+			CustomLogger.logInfoEx("Console", "showAllObjectsOnRegistry", "", e);
+		}
+		//print
+		printToConsole("Objects on registry:");
+		for(int	i=0;i<obj.length;i++){
+			printToConsole(" -> " + obj[i]);
+		}
+	}
+	
+	/**
+	 * Show a notify to report to the player if is the turn of another player
+	 */
+	public void notifyIsDoingTurnAnotherPlayer(){
+		printToScreen("Another player is managing moves, wait");
+	}
+	
+	/**
+	 * Send to client the command for the sound play
+	 */
+	public void playSoundOnClient(String nameTrack){
+		//SEND THE PRINT TO CLIENT (COMMAND FOR GUI RECOGNIZE)	
+		if(isSocketMode){
+			//getting right socket
+			ServerSocket ss = game.getSocketViewerList().get(game.getCurrentPlayerCounter());
+			//sending
+			socketStreamWriterToClient(ss, socketCmdList[1] + "!" + nameTrack, 1);		
+		}else{
+			try{
+				cci = game.getViewerList().get(game.getCurrentPlayerCounter());
+				cci.playSound(nameTrack);
+			}catch(Exception e){
+				CustomLogger.logInfoEx("Console", "playSoundOnClient", "no client view to print", e);
+			}
+		}
+	}
+	
+	//END OF GAME LOGIC METHODS
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//START OF GRAPHICAL GUI METHODS
+	
+	/**
+	* GRAPHICAL GUI METHODS
+	* 
+	* SHOWS THE MAIN MAP IN A WINDOW
+	* (REQUEST TO CLIENT)
+	* 
+	* -mode  1 rmi | 2 socket
+	* -if debug true, show an additional map with position numbers
+	* 
+	* logger: CustomLogger.logConsoleHistory("Console", "showMap", "Player: " + game.getCurrentPlayerCounter() + " | OPEN GAME WINDOW | was not opened, due to an exception")
+	* 
+	* @throws IOException
+	*/
+	public boolean showMap(int mode, boolean debug){		
+		
+		boolean isStarted = false;
+		
+		//GAME GUI
+		//SEND REQUESTS TO ALL CLIENTS
+		if(mode == 1){
+		
+			// RMI //
+			try{
+				//for each client
+				for(ClientConsoleInterface cl : game.getViewerList()){
+					isStarted = cl.showGameWindow(game.getPlayersNumber());
+				}
+			}catch(Exception e){
+				CustomLogger.logInfoEx("Console", "showMap", "no client view to print", e);
+			}
+			
+		}else if(mode == 2){
+			
+			// SOCKET //
+			try{
+				//for each client
+				for(ServerSocket ss : game.getSocketViewerList()){
+					//sending
+					socketStreamWriterToClient(ss, socketCmdList[2] + "!" + Integer.toString(game.getPlayersNumber()), 1);
+				}
+				Thread.sleep(5000);
+				isStarted = true;
+			}catch(Exception e){
+				CustomLogger.logInfoEx("Console", "showMap", "no client view to print", e);
+			}
+			
+		}else{
+			
+			//notify
+			printToConsole("no game window were opened due to invalid request");
+		}
+		
+		//DEBUG METHOD
+		//GAME TEST GUI
+		//MAP WITH NOTES
+		if(debug){
+			try{
+				// frame initialization
+				JFrame mainframe = new JFrame("Sheepland");
+				
+				// frame size
+				mainframe.setSize(300, 200);
+				
+				// request to JVM to close program when the window is closed
+				mainframe.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+				
+				// add panel
+				JPanel panel1 = new JPanel();
+				JPanel panel2 = new JPanel();
+				panel1.add(new JLabel("LINE COMMAND INPUT"));
+				
+				// add image
+				BufferedImage myPicture = ImageIO.read(new File("./resources/img/game_board_mapping.png"));
+				JLabel picLabel = new JLabel(new ImageIcon(myPicture));
+				panel2.add(picLabel);
+				
+				// set panels
+				mainframe.add(panel2);
+				
+				// set layout
+				mainframe.setLayout(new GridLayout());
+				mainframe.pack();
+				mainframe.setVisible(true);
+			}catch(Exception e){
+				CustomLogger.logInfoEx("Console", "showMap - DEBUG", " ", e);
+			}
+		}
+		return isStarted;
+	}
+
+}

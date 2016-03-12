@@ -1,0 +1,213 @@
+package game.client.socket;
+
+import game.client.interfaces.ClientConsoleInterface;
+import game.client.view.ClientConsole;
+
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.SocketException;
+import java.rmi.RemoteException;
+
+/**
+ * 
+ * CLIENT SOCKET
+ * CONNECTION CLASS
+ * 
+ * @author Leonardo
+ *
+ */
+public class StartClientSocket {
+	
+	//CONNECTION VARS
+	//port
+	private static final int PORT = 4000;
+    //objects init
+	private Socket socket = null;
+	private ObjectOutputStream outStream = null;
+	private ObjectInputStream inStream = null;
+    
+	//GAME VARS
+	private static boolean gameIsRunning;
+	
+	//PLAYER UNIQUE ID AND PORT
+	private static int clientId;
+	private static int clientPort;
+	
+	//INTERFACES
+	private static ClientConsoleInterface clientConsoleInterface;
+	
+	/**
+	 * CONSTRUCTOR
+	 * allocate a new instance of the main input/output client console
+	 * @throws RemoteException
+	 */
+	public StartClientSocket() throws RemoteException{
+		clientConsoleInterface = new ClientConsole();
+	}
+	
+	/**
+	 * SOCKET CLASS MAIN METHOD
+	 * create a socket, input/output stream from server, and log the client into server as new client id
+	 */
+	public void runClientSocket() throws Exception {
+		
+		try {
+
+			//notify
+			clientConsoleInterface.showOnClient("Connecting to server..");
+			
+			//log in on the server
+            getNewIdAndPort();
+			
+			//WAIT THE GO FROM SERVER (before starting connection)
+			boolean go = waitGoFromServer();
+			
+			//notify
+			clientConsoleInterface.showOnClient("the server has accepted connection on port: " + clientPort);
+			
+			//start game
+			gameIsRunning = go;
+			ManageClientSocket.isRunningGame = go;
+			
+			//print stream
+			clientConsoleInterface.showOnClient("Connected to server..");
+			
+			//MAIN CLIENT RUNNING GAME
+			//CREATE THE MAIN GAME MANAGE CLASS (in new thread)
+			Thread clientGame = new Thread(new ManageClientSocket());
+			clientGame.start();
+			//clientGame.join(); causes the freeze
+			
+			// > CLIENT GAME RUNNING HERE <
+			
+			//Game's end
+			//ManageClientSocket.isRunningGame = false;
+			//TODO
+		} catch (Exception e) {
+			
+			clientConsoleInterface.exceptionClientLogger("Remote Exception in StartClientRmi", e);
+			throw new SocketException();
+			
+		} finally {
+			
+			//notify
+			//clientConsoleInterface.showOnClient("..disconnected from server.\nGAME OVER");
+		}
+		
+	}
+
+	/**
+	 * Get a new id (sequential) for the current player on default server port
+	 * requests a new id from server (on default 4000 port)
+	 */
+	private void getNewIdAndPort() throws Exception {
+		
+		//get the localhost (automatically detect 127.0.0.1)
+		InetAddress host = InetAddress.getLocalHost();
+		
+		//socket connection creation
+        socket = new Socket(host.getHostName(), PORT);
+        
+        //creating writer to server
+        outStream = new ObjectOutputStream(socket.getOutputStream());
+        
+        //write to server the login request
+        outStream.writeObject("#port-login#");
+
+        //read the server response
+        inStream = new ObjectInputStream(socket.getInputStream());
+        String msg = (String) inStream.readObject();
+        
+        //split of the arrived message for id and port  ->  [id]#[port]
+        String[] parts = msg.split("#");
+		int id = Integer.parseInt(parts[0]);
+		int port = Integer.parseInt(parts[1]); 
+                
+        //debug
+        System.out.println(">> port from server: " + port + " >> client id: " + id);
+
+        //release resources
+		inStream.close();
+        outStream.close();
+		socket.close();
+        
+		//save
+		clientId = id;
+		clientPort = port;
+		
+		//in case the return is -1 (no more space for this game) notify and shutdown client
+		if(clientId==-1){
+			clientConsoleInterface.showOnClient("the game is full, please wait for a new game and restart client");
+			throw new Exception();
+		}
+	}
+	
+	/**
+	 * Keep listening on the default port and wait the game start call from server
+	 * msg pattern: #start-game#
+	 * 
+	 * @throws Exception 
+	 */
+	private boolean waitGoFromServer() throws Exception{
+		
+		while(true){
+			try{
+				
+				//get the localhost (automatically detect 127.0.0.1)
+				InetAddress host = InetAddress.getLocalHost();
+			
+				//socket connection creation
+		        socket = new Socket(host.getHostName(), PORT + clientId + 1);
+		        
+		        //read from server
+		        inStream = new ObjectInputStream(socket.getInputStream());
+		        @SuppressWarnings("unused")
+				String msg = (String) inStream.readObject();
+		
+		        //debug
+		        System.out.println(">> trying to start - client " + clientId);
+		
+		        //release resources
+				inStream.close();
+				
+				//if connection success (else the try makes the while continue)
+				return true;
+			
+			} catch (SocketException e){
+				//next while
+				//TODO
+			}
+			
+			Thread.sleep(10);
+		}
+	}
+	
+	/**
+	 * GETTERS AND SETTERS
+	 */
+	//TODO
+	/**
+	 * 
+	 * @return
+	 */
+	public static int getClientId(){
+		return clientId;
+	}
+	public static void setClientId(int newid){
+		clientId = newid;
+	}
+	
+	public static int getClientPort(){
+		return clientPort;
+	}
+	public static void setClientPort(int newport){
+		clientPort = newport;
+	}
+	
+	public static ClientConsoleInterface getClientConsoleInterface(){
+		return clientConsoleInterface;
+	}
+	
+}

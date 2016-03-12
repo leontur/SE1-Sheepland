@@ -1,0 +1,427 @@
+package game.server.model;
+
+import game.client.rmi.interfaces.ClientConsoleInterface;
+import game.server.rmi.interfaces.*;
+import game.server.view.*;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * MAIN GAME CLASS
+ * 
+ * @author Leonardo
+ *
+ */
+public class Game {
+	
+	/**
+	 * CLASS VARS
+	 */
+	protected DatabaseInterface db = new Database();
+	
+	/**
+	 * RMI VARS
+	 */
+	private boolean runningGame;
+	private boolean allPlayersInitialized;
+	private boolean allViewsRequested;
+	
+	/**
+	 * TURN VARS
+	 */
+	//move count
+	private final int MAX_MOVEMENT_COUNT = db.getMaxMovementCount();
+	private int moveDoneCount = 0;
+	
+	//movement types
+	private boolean shepherdHaveBeenMoved; 
+	private boolean sheepHaveBeenMoved;
+	private boolean BSheepHaveBeenMoved;
+	private boolean cardHaveBeenBought;
+	private boolean wolfHaveBeenMoved;
+	
+	//final phase
+	private boolean finalTurn = false;
+	
+	//remaining enclosures
+	private int remainingStandardEnclosures = db.getEnclosureNum();
+	private int remainingFinalEnclosures = db.getFinalEnclosureNum();
+	
+	//card counters
+	private int[] boughtTypes = new int[db.getPlotTypesNum()];
+	
+	//current player counter
+	private int currPlayerCounter = 0;
+	private int lastDiceNum;	
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
+	//START OBJECT VARS
+	
+	//object type allocation
+	private String objTYPE;	
+	
+	//main players number
+	private static int playersNumber;
+	
+	//Positions (all)
+	private static List<Position> allPositions = new ArrayList<Position>();
+	
+	//Sheeps (all)
+	private static List<Sheep> allSheeps = new ArrayList<Sheep>();
+	
+	//Sheeps Black (all)
+	private static List<SheepBlack> allBSheeps = new ArrayList<SheepBlack>();
+	
+	//Initial cards
+	private static List<InitialCard> initialCardsPile = new ArrayList<InitialCard>();
+	
+	//Pile of standard cards by plot type
+	private static List<List<StandardCard>> plotCardsPileByPlotType = new ArrayList<List<StandardCard>>();
+	
+	//Regions by plot type
+	private static List<List<Region>> regionPileByPlotType = new ArrayList<List<Region>>();
+	
+	//Regions (all)
+	private static List<Region> allRegions = new ArrayList<Region>();
+	
+	//Cities (all)
+	private static List<City> allCities = new ArrayList<City>();
+	
+	//Shepherds (all)
+	private static List<Shepherd> allShepherds = new ArrayList<Shepherd>();
+
+	//Dinars (all)
+	private static List<Dinar> allDinars = new ArrayList<Dinar>();
+	
+	//Enclosures (std) (all)
+	private static List<Enclosure> allStandardEnclosures = new ArrayList<Enclosure>();
+	
+	//Final Enclosures (all)
+	private static List<FinalEnclosure> allFinalEnclosures = new ArrayList<FinalEnclosure>();
+	
+	//Dice (one)
+	private static Dice dice;
+	
+	//Wolf (one)
+	private static Wolf wolf;
+		
+	//Players (all)
+	private static List<Player> players = new ArrayList<Player>();
+	
+	//Allocate a game viewer (initialized from rmi using a setter)
+	private ViewerInterface mainGameViewer = new Console(this);
+	
+	//Create list for future clients viewer storage
+	private List<ClientConsoleInterface> viewerList = new ArrayList<ClientConsoleInterface>();
+	
+	//END VARS
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
+	//START OF METHODS
+	
+	/**
+	 * OBJECTS GETTERS
+	 */
+	public List<Position> getGameAllPositions(){
+		return allPositions;
+	}
+	public List<Sheep> getGameAllSheeps(){
+		return allSheeps;
+	}
+	public List<SheepBlack> getGameAllBSheeps(){
+		return allBSheeps;
+	}
+	public List<InitialCard> getGameInitialCardsPile(){
+		return initialCardsPile;
+	}
+	public List<List<StandardCard>> getGamePlotCardsPileByPlotType(){
+		return plotCardsPileByPlotType;
+	}
+	public List<List<Region>> getGameRegionPileByPlotType(){
+		return regionPileByPlotType;
+	}
+	public List<Region> getGameAllRegions(){
+		return allRegions;
+	}
+	public List<City> getGameAllCities(){
+		return allCities;
+	}
+	public List<Shepherd> getGameAllShepherds(){
+		return allShepherds;
+	}
+	public List<Dinar> getGameAllDinars(){
+		return allDinars;
+	}
+	public List<Enclosure> getGameAllStandardEnclosures(){
+		return allStandardEnclosures;
+	}
+	public List<FinalEnclosure> getGameAllFinalEnclosures(){
+		return allFinalEnclosures;
+	}
+	public Dice getGameDice(){
+		return dice;
+	}
+	public Wolf getGameWolf(){
+		return wolf;
+	}
+	public List<Player> getGamePlayers(){
+		return players;
+	}
+	public ViewerInterface getGameViewer(){
+		return mainGameViewer;
+	}
+	
+	/**
+	 * OBJECTS SETTERS
+	 */	
+	public void setGameAllPositions(List<Position> newlist){
+		allPositions = newlist;
+	}
+	public void setGameAllSheeps(List<Sheep> newlist){
+		allSheeps = newlist;
+	}
+	public void setGameAllallBSheeps(List<SheepBlack> newlist){
+		allBSheeps = newlist;
+	}
+	public void setGameInitialCardsPile(List<InitialCard> newlist){
+		initialCardsPile = newlist;
+	}
+	public void setGamePlotCardsPileByPlotType(List<List<StandardCard>> newlist){
+		plotCardsPileByPlotType = newlist;
+	}
+	public void setGameRegionPileByPlotType(List<List<Region>> newlist){
+		regionPileByPlotType = newlist;
+	}
+	public void setGameAllRegions(List<Region> newlist){
+		allRegions = newlist;
+	}
+	public void setGameAllCities(List<City> newlist){
+		allCities = newlist;
+	}
+	public void setGameAllShepherds(List<Shepherd> newlist){
+		allShepherds = newlist;
+	}
+	public void setGameAllDinars(List<Dinar> newlist){
+		allDinars = newlist;
+	}
+	public void setGameAllStandardEnclosures(List<Enclosure> newlist){
+		allStandardEnclosures = newlist;
+	}
+	public void setGameAllFinalEnclosures(List<FinalEnclosure> newlist){
+		allFinalEnclosures = newlist;
+	}
+	public void setGameDice(Dice newdice){
+		dice = newdice;
+	}
+	public void setGameWolf(Wolf newwolf){
+		wolf = newwolf;
+	}
+	public void setGamePlayers(List<Player> newlist){
+		players = newlist;
+	}
+	public void setGameViewer(ViewerInterface newview){
+		mainGameViewer = newview;
+	}
+	
+	//////////////////////////////////////////////////////////////////////////////
+	
+	/**
+	 * SETTERS
+	 */
+	/**
+	 * Set a new string as a object type
+	 * @param name
+	 */
+	public void setThisObjType(String name){
+		objTYPE = name;
+	}
+	/**
+	 * Set main players number counter
+	 * @param number
+	 */
+	public void setPlayersNumber(int number){
+		playersNumber = number;
+	}
+	
+	/**
+	 * GETTERS
+	 */
+	public int getPlayersNumber(){
+		return playersNumber;
+	}
+	public String getObjType(){
+		return objTYPE;
+	}
+	
+	//END OF METHODS
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
+	//START OF SECONDARY METHODS (RMI)
+	
+	public void setRunningGame(boolean newstatus){
+		runningGame = newstatus;
+	}
+	public boolean isRunningGame(){
+		return runningGame;
+	}
+	
+	public void setAllPlayersInitialized(boolean newstatus){
+		allPlayersInitialized = newstatus;
+	}
+	public boolean isAllPlayersInitialized(){
+		return allPlayersInitialized;
+	}
+	
+	public void setViewerList(List<ClientConsoleInterface> newstatus){
+		viewerList = newstatus;
+	}
+	public void addViewerToList(ClientConsoleInterface newclient){
+		viewerList.add(newclient);
+	}
+	public List<ClientConsoleInterface> getViewerList(){
+		return viewerList;
+	}
+	
+	public void setAllViewsRequested(boolean newstatus){
+		allViewsRequested = newstatus;
+	}
+	public boolean getAllViewsRequested(){
+		return allViewsRequested;
+	}
+	
+	//END OF SECONDARY METHODS
+	/////////////////////////////////////////////////////////////////////////////////////////////////////	
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
+	// START OF GAME STATUS METHODS
+	
+	/**
+	 * Clear the history of movement of a turn (called for a new turn)
+	 */
+	public void clearMoves(){
+		moveDoneCount = 0;
+		sheepHaveBeenMoved = false;
+		BSheepHaveBeenMoved = false;
+		cardHaveBeenBought = false;
+		shepherdHaveBeenMoved = false;
+		wolfHaveBeenMoved = false;
+	}
+	
+	
+	/**
+	 * CHECKERS - GETTERS - SETTERS
+	 */
+	
+	//CHECKERS
+	public boolean isShepherdBeenMoved() {
+		return shepherdHaveBeenMoved;
+	}
+	public boolean isCardBeenBought() {
+		return cardHaveBeenBought;
+	}
+	public boolean isSheepBeenMoved() {
+		return sheepHaveBeenMoved;
+	}
+	public boolean isBSheepBeenMoved() {
+		return BSheepHaveBeenMoved;
+	}
+	public boolean isFinalTurn() {
+		return finalTurn;
+	}
+	public boolean isWolfBeenMoved() {
+		return wolfHaveBeenMoved;
+	}
+	
+	//GETTER
+	public int getRemainingStandardEnclosuresNum() {
+		return remainingStandardEnclosures;
+	}
+	
+	public int getRemainingFinalEnclosuresNum() {
+		return remainingFinalEnclosures;
+	}
+	
+	public int getMaxMoveCount() {
+		return MAX_MOVEMENT_COUNT;
+	}
+
+	public int[] getAllBoughtTypes() {
+		return boughtTypes;
+	}
+
+	public int getMoveDoneCount() {
+		return moveDoneCount;
+	}
+	
+	public int getCurrentPlayerCounter(){
+		return currPlayerCounter;	
+	}
+	
+	public int getLastDiceNum(){
+		return lastDiceNum;
+	}
+	
+	//SETTER
+	public void setRemainingStandardEnclosuresNum(int num) {
+		remainingStandardEnclosures = num;
+	}
+
+	public void setRemainingFinalEnclosuresNum(int num) {
+		remainingFinalEnclosures = num;
+	}
+	
+	public void setShepherdBeenMoved(boolean bool) {
+		shepherdHaveBeenMoved = bool;
+	}
+
+	public void setFieldBeenBought(boolean bool) {
+		cardHaveBeenBought = bool;
+	}
+	
+	public void setSheepBeenMoved(boolean bool) {
+		sheepHaveBeenMoved = bool;
+	}
+
+	public void setBSheepBeenMoved(boolean bool) {
+		BSheepHaveBeenMoved = bool;
+	}
+	
+	public void setFinalTurn(boolean bool) {
+		finalTurn = bool;
+	}
+	
+	public void setWolfBeenMoved(boolean bool) {
+		wolfHaveBeenMoved = bool;
+	}
+	
+	public void setAllBoughtTypes(int[] numbers) {
+		//security clone
+		if(numbers != null){
+			boughtTypes = Arrays.copyOf(numbers, numbers.length);
+		}
+	}
+	
+	public void setMoveDoneCount(int count) {
+		moveDoneCount = count;
+	}
+	
+	public void increaseMoveDoneCountByOne() {
+		moveDoneCount++;
+	}
+	
+	public void setCurrentPlayerCounter(int id){
+		currPlayerCounter = id;	
+	}
+	
+	public void setLastDiceNum(int n){
+		lastDiceNum = n;
+	}
+	
+	//END OF SECONDARY METHODS (RMI)
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+}

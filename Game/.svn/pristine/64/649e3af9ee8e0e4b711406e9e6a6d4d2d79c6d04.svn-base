@@ -1,0 +1,208 @@
+package game.server.controller;
+
+import game.server.model.Database;
+import game.server.model.Game;
+import game.server.model.Player;
+import game.server.model.Region;
+import game.server.model.SheepBlack;
+import game.server.model.StandardCard;
+import game.server.rmi.interfaces.*;
+import game.server.view.ViewerInterface;
+
+import java.util.*;
+
+/**
+ * MAIN GAME SCORE COUNTER CLASS
+ * 
+ * @author Leonardo
+ *
+ */
+public class Counter {
+	
+	/**
+	 * CLASS VARS
+	 */
+	private static DatabaseInterface db = new Database();
+	
+	/**
+	 * SHOW SCORE
+	 *  by calling stats and sorting
+	 * 
+	 * @param players
+	 * @param allBSheeps
+	 * @param regionPileByPlotType
+	 * @param mainGameViewer
+	 */
+	public static void showScoreStats(Game game){
+		
+		//getting interfaces
+		List<Player> players = game.getGamePlayers();
+		List<SheepBlack> allBSheeps = game.getGameAllBSheeps();
+		List<List<Region>> regionPileByPlotType = game.getGameRegionPileByPlotType();
+		ViewerInterface mainGameViewer = game.getGameViewer();
+		
+		//get score
+		for(int i=0; i<players.size(); i++){
+			doStats(players.get(i), allBSheeps, regionPileByPlotType);
+		}
+		
+		//sort
+		List<List<Integer>> sortedlist = playersScoreSorting(players);
+		
+		//TODO
+		//SHOW THIS FOR EACH VIEW
+		
+		//show
+		mainGameViewer.notifyForWinner(game, sortedlist);
+		
+	}
+	
+	/**
+	 * SORTING PLAYERS' LIST BY POINTS
+	 * RETURN A TWO DIMENSIONAL LIST WITH [player id][score] ORDERED BY MAX TO MIN
+	 * 
+	 * @param players
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public static List<List<Integer>> playersScoreSorting(List<Player> players){
+		
+		int i;
+		List<List<Integer>> orderList = new ArrayList<List<Integer>>();
+		
+		//for each player
+		for(i=0; i<players.size(); i++){
+			
+			//get the score and set to new list
+			orderList.get(i).set(i, players.get(i).getScore());
+		}
+		
+		//set column to sort
+		final int column = 1;
+
+		//Convert data into an object array
+		Object[] temp = orderList.toArray();
+
+		Arrays.sort(temp, new Comparator<Object>() {
+		    
+			public int compare(Object o1, Object o2) {
+		        //get inner arrays to be compared by type-casting
+		        List<Integer> temp1 = (ArrayList<Integer>) o1;
+		        List<Integer> temp2 = (ArrayList<Integer>) o2;
+		        //compare those inner array's indexes
+		        return temp1.get(column).compareTo(temp2.get(column));
+		    }
+		});
+
+		//clear the old one and add the ordered list in
+		orderList.clear();
+
+		for(Object o: temp){
+			orderList.add((ArrayList<Integer>) o);
+		}
+
+		return orderList;
+	}
+	
+	
+	
+	/**
+	 * CALCULATE THE SCORE AND ASSIGN TO EACH PLAYER
+	 * 	REQUESTED AS A SINGLE GAMER COUNT EACH TIME
+	 * @param players
+	 * @param allBSheeps
+	 * @param regionPileByPlotType
+	 * @param mainGameViewer
+	 */
+	public static void doStats(
+			Player player,
+			List<SheepBlack> allBSheeps,
+			List<List<Region>> regionPileByPlotType
+			){
+		
+		
+		/**
+		 * COUNT WHITE SHEEPS PER PLOT TYPE
+		 */
+		int i, j;
+		int[] sheepsOnRegionByPlotType = new int[regionPileByPlotType.size()];
+		
+		//for each plot type
+		for(i=0; i<regionPileByPlotType.size(); i++){
+			
+			//for each region in pile
+			for(j=0; j<regionPileByPlotType.get(i).size(); j++){
+				
+				//add sheeps
+				sheepsOnRegionByPlotType[i] += regionPileByPlotType.get(i).get(j).getAllSheeps().size();
+			}
+		}
+		
+		/**
+		 * COUNT BLACK SHEEPS PER PLOT TYPE
+		 */
+		int[] sheepsBOnRegionByPlotType = new int[regionPileByPlotType.size()];
+		
+		//for each plot type
+		for(i=0; i<regionPileByPlotType.size(); i++){
+			
+			//for each region in pile
+			for(j=0; j<regionPileByPlotType.get(i).size(); j++){
+				
+				//add black sheeps
+				sheepsBOnRegionByPlotType[i] += regionPileByPlotType.get(i).get(j).getAllBlackSheeps().size();
+			}
+		}
+		
+		/**
+		 * COUNT PLAYER PLOT TYPES
+		 */
+		int playerCardsNum = player.getCountOfOwnedCards();
+		List<StandardCard> playerCards = player.getOwnedCards();
+		int[] cardOwnedByPlotType = new int[regionPileByPlotType.size()];
+		
+		//for each plot type
+		for(i=0; i<regionPileByPlotType.size(); i++){
+			
+			//for each owned card
+			for(j=0; j<playerCardsNum; j++){
+				
+				//if type match
+				if(regionPileByPlotType.get(i).get(j).getInitialCardPlotType() == playerCards.get(j).getInitialCardPlotType()){
+					
+					//add card
+					cardOwnedByPlotType[i]++;
+					
+				}
+			}
+		}
+		
+		
+		/**
+		 * SET ALL POINTS TO PLAYER
+		 */
+		int totalscore = 0;
+		
+		//calculate total for sheeps
+		for(i=0; i<regionPileByPlotType.size(); i++){
+			
+			//add white sheeps
+			totalscore += sheepsOnRegionByPlotType[i] * cardOwnedByPlotType[i] * db.getSheepValue();
+					
+			//add black sheeps
+			totalscore += sheepsBOnRegionByPlotType[i] * cardOwnedByPlotType[i] * db.getSheepBValue();
+		}
+		
+		//add remaining dinars
+		totalscore += player.getCountOfRemainingDinars();
+		
+		//add value of purchased cards
+		for(j=0; j<player.getOwnedCards().size(); j++){
+			totalscore += player.getOwnedCards().get(j).getCardValue() * db.getPlotCardsValueMultiplier();
+		}
+		
+		//set to this player
+		player.setScore(totalscore);
+	}
+
+}

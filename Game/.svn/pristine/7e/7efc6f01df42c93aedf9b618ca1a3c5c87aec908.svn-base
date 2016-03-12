@@ -1,0 +1,497 @@
+package game.server.controller;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+import game.server.model.*;
+import game.server.rmi.interfaces.DatabaseInterface;
+
+/**
+ * NEW GAME INITIALIZER CLASS
+ * 
+ * @author Leonardo
+ *
+ */
+public class Initializer {
+	
+	/**
+	 * CLASS VARS
+	 */
+	private static DatabaseInterface db = new Database();
+	
+	/**
+	 * PRIVATE CONSTRUCTOR
+	 */
+	private Initializer(){
+		
+	}
+
+	/**
+	 * INITIALIZE GAME MAP (ALL OBJECTS)
+	 * 
+	 * All objects of the game are initialized by this method
+	 * 
+	 * @param allPositions
+	 * @param allSheeps
+	 * @param allBSheeps
+	 * @param initialCardsPile
+	 * @param plotCardsPileByPlotType
+	 * @param regionPileByPlotType
+	 * @param allRegions
+	 * @param allCities
+	 * @param allShepherds
+	 * @param allDinars
+	 * @param allStandardEnclosures
+	 * @param allFinalEnclosures
+	 * @throws RemoteException 
+	 */
+	public static void initMainMap(Game game){
+		
+		//////////////////////////////////////////////////////
+		//GETTING LISTS
+		
+		List<Position> allPositions = game.getGameAllPositions();
+		List<Sheep> allSheeps = game.getGameAllSheeps();
+		List<SheepBlack> allBSheeps = game.getGameAllBSheeps();
+		List<InitialCard> initialCardsPile = game.getGameInitialCardsPile();
+		List<List<StandardCard>> plotCardsPileByPlotType = game.getGamePlotCardsPileByPlotType();
+		List<List<Region>> regionPileByPlotType = game.getGameRegionPileByPlotType();
+		List<Region> allRegions = game.getGameAllRegions();
+		List<City> allCities = game.getGameAllCities();
+		List<Shepherd> allShepherds = game.getGameAllShepherds();
+		List<Dinar> allDinars = game.getGameAllDinars();
+		List<Enclosure> allStandardEnclosures = game.getGameAllStandardEnclosures();
+		List<FinalEnclosure> allFinalEnclosures = game.getGameAllFinalEnclosures();
+		
+		//////////////////////////////////////////////////////
+		//CALLING METHODS
+		
+		//preliminary multiple list initialization
+		initMultipleListsOnGame(plotCardsPileByPlotType, regionPileByPlotType);
+		
+		//initial cards pile init
+		initInitialCards(initialCardsPile);
+		//shuffle initial cards for pile assignation
+		shuffleInitialCardsPile(initialCardsPile);
+		
+		//standard cards pile init (for each plot type)
+		initializeAllPiles(plotCardsPileByPlotType);
+		
+		//position init
+		initPositions(allPositions);
+		//adjacent position to position
+		setPositionAdjToPosition(allPositions);
+		
+		//sheep init
+		initSheeps(allSheeps);
+		
+		//region init
+		initRegions(regionPileByPlotType, allRegions, allSheeps);
+		//adjacent position to region
+		setPositionToRegion(regionPileByPlotType, allPositions);
+		
+		//black sheep init
+		initBSheeps(allBSheeps);
+		//city init
+		initCity(allCities, allBSheeps);
+		//adjacent position to city
+		setPositionToCity(allCities, allPositions);
+		//add cities to region (for move allow)
+		addCityToRegionList(allCities, allRegions);
+		
+		//enclosure init
+		initEnclosures(allStandardEnclosures);
+		//final enclosure init
+		initFinalEnclosures(allFinalEnclosures);
+		
+		//shepherd init
+		initShepherds(allShepherds);
+		
+		//dinars init
+		initDinars(allDinars);
+		
+		//dice init
+		initDice(game);
+		
+		//wolf init
+		initWolf(allCities, game);
+		
+	}
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	/**
+	 * INITIALIZING METHODS
+	 */
+	
+	/**
+	 * Preliminary
+	 * MULTIPLE LISTS INITIALIZER
+	 */
+	private static void initMultipleListsOnGame(List<List<StandardCard>> plotCardsPileByPlotType, List<List<Region>> regionPileByPlotType){
+		/**
+		 * MULTIPLE LIST OF OBJECTS INITIALIZATION
+		 */
+		//New std card pile by different types of plots
+		for(int i=0; i<db.getPlotTypesNum(); i++){
+			plotCardsPileByPlotType.add(new ArrayList<StandardCard>());
+		}
+
+		//New region pile by different types of plots
+		for(int i=0; i<db.getPlotTypesNum(); i++){
+			regionPileByPlotType.add(new ArrayList<Region>());
+		}
+	}
+	
+	
+	/**
+	 * INITIALIZE WHITE SHEEPS
+	 * Create all the sheeps in related list | pass a sequential id
+	 * Called in map initialization
+	 * @param sheepList
+	 * @throws RemoteException 
+	 */
+	private static void initSheeps(List<Sheep> allSheeps){
+		for(int i=0; i<db.getSheepNum(); i++){
+			allSheeps.add(new Sheep(i));
+		}
+	}
+	
+	/**
+	 * INITIALIZE BLACK SHEEPS - DISTRIBUITE BLACK SHEEPS
+	 * Create all the black sheeps in related list | pass a sequential id
+	 * Add the created black sheep to the default city (0=sheepsburg)
+	 * Called in map initialization
+	 * @param sheepList
+	 * @throws RemoteException 
+	 */
+	private static void initBSheeps(List<SheepBlack> allBSheeps){
+		for(int i=0; i<db.getSheepBNum(); i++){
+			//Add all black sheeps (with null reg target)
+			allBSheeps.add(new SheepBlack(db.getSheepNum()+i, null));
+		}
+	}
+	
+	/**
+	 * INITIALIZE SHEPHERDS
+	 * Create all the shepherds in related list | pass a sequential id and the color string
+	 * @param shephList
+	 * @throws RemoteException 
+	 */
+	private static void initShepherds(List<Shepherd> allShepherds){
+		for(int i=0; i<db.getTotShepherdNum(); i++){
+			allShepherds.add(new Shepherd(i, db.getShepherdColor().get(i)));
+		}
+	}
+	
+	/**
+	 * INITIALIZE DINARS
+	 * Create all the dinars in related list | pass a sequential id
+	 * @param dinarList
+	 * @throws RemoteException 
+	 */
+	private static void initDinars(List<Dinar> allDinars){
+		for(int i=0; i<db.getDinarsTotNum(); i++){
+			allDinars.add(new Dinar(i));
+		}
+	}
+	
+	/**
+	 * INITIALIZE STANDARD ENCLOSURES
+	 * Create all the enclosures in related list | pass a sequential id
+	 * @param enclList
+	 * @throws RemoteException 
+	 */
+	private static void initEnclosures(List<Enclosure> allStandardEnclosures){
+		for(int i=0; i<db.getEnclosureNum(); i++){
+			allStandardEnclosures.add(new Enclosure(i));
+		}
+	}
+	
+	/**
+	 * INITIALIZE FINAL ENCLOSURES
+	 * Create all the final enclosures in related list | pass a sequential id
+	 * @param finenclList
+	 * @throws RemoteException 
+	 */
+	private static void initFinalEnclosures(List<FinalEnclosure> allFinalEnclosures){
+		for(int i=0; i<db.getFinalEnclosureNum(); i++){
+			allFinalEnclosures.add(new FinalEnclosure(i));
+		}
+	}
+	
+	/**
+	 * INITIALIZE POSITIONS
+	 * Create all the final enclosures in related list | pass a sequential id and the linked view value
+	 * Called in map initialization
+	 * @param posList
+	 * @throws RemoteException 
+	 */
+	private static void initPositions(List<Position> allPositions){
+		for(int i=0; i<db.getPositionNum(); i++){
+			allPositions.add(new Position(i, db.getPositionViewerValue().get(i)));
+		}
+	}
+	
+	/**
+	 * INITIALIZE INITIAL CARDS
+	 * NOTE: the initial card class is super for standard card
+	 * Create the pile of the initial cards in related list | pass a sequential id and the string of type
+	 * @param initialCardPile
+	 * @throws RemoteException 
+	 */
+	private static void initInitialCards(List<InitialCard> initialCardsPile){
+		for (int i=0; i<db.getPlotTypesNum(); i++){
+			initialCardsPile.add(new InitialCard(db.getPlotTypes().get(i), i));
+		}
+	}
+	
+	/**
+	 * INITIALIZE STANDARD CARDS
+	 * NOTE: the initial card class is super for standard card
+	 * For each plot type: create the pile of the standard cards in related list | pass a sequential id, the value, and the string of type
+	 * @param plotCardsPileByPlotType
+	 * @throws RemoteException 
+	 */
+	private static void initializeAllPiles(List<List<StandardCard>> plotCardsPileByPlotType){
+		
+		int i;
+		InitialCard ic = new InitialCard();
+		
+		//for each pile in the main list
+		for(List<StandardCard> thispile : plotCardsPileByPlotType){
+			
+			//for each card value
+			for(i=db.getStandardPlotCardsNum()-1; i>=0; i--){
+				
+				//add a new card
+				thispile.add(new StandardCard(ic.getPlotTypeById(i), i, i));
+				
+			}
+		}
+	}
+	
+	/**
+	 * INITIALIZE WOLF
+	 * as new object, and set properties
+	 * NOTE: additional rule, there is only a wolf. And it is in the first city (sheepsburg)
+	 * @param wolf
+	 */
+	private static void initWolf(List<City> allCities, Game game){
+		
+		//set new init dice
+		game.setGameWolf(new Wolf());
+		Wolf wolf = game.getGameWolf();
+		
+		wolf.setWolfIdentifier(0);
+		wolf.setTarget(allCities.get(0));
+		
+		//add to first city
+		allCities.get(0).setWolf(wolf);
+	}
+	
+	/**
+	 * GAME DICE INITIALIZATION
+	 * as new object
+	 * @param dice
+	 */
+	private static void initDice(Game game){
+		//set new init dice
+		game.setGameDice(new Dice());
+	}
+	
+	/**
+	 * INITIALIZE REGIONS <- POSITIONS
+	 * Open the the list of the regions by plot type and for each region create and set a list of its adjacent positions
+	 * @param regionPileByPlotType (main list of various region ordered by plot type)
+	 * @param allPositions (all positions list)
+	 */
+	private static void setPositionToRegion(List<List<Region>> regionPileByPlotType, List<Position> allPositions){		
+		
+		int i, j, k, posid, regid;
+		
+		//for each plot type
+		for(i=0; i<regionPileByPlotType.size(); i++){
+			
+			//for each region in this type pile
+			for(j=0; j<regionPileByPlotType.get(i).size(); j++){
+			
+				//create a temp position list
+				List<Position> temp = new ArrayList<Position>();
+				
+				//found the region id
+				regid = regionPileByPlotType.get(i).get(j).getRegionIdentifier();
+				
+				//for each position in mapping
+				for(k=0; k<db.getPositionsPerRegion().get(regid).length; k++){
+					
+					//found a new position for this region id
+					posid = db.getPositionsPerRegion().get(regid)[k];
+					
+					//add the pos as obj in the pos temp list (-1 because pos numb in matrix is +1)
+					temp.add(allPositions.get(posid-1));
+					
+				}
+				
+				//store the pos list in region (object)
+				regionPileByPlotType.get(i).get(j).setAdjPositions(temp);
+				
+			}
+		}
+	}
+	
+	/**
+	 * INITIALIZE CITY <- POSITIONS
+	 * Open the the list of the cities and for each one create and set a list of its adjacent positions
+	 * @param allCities
+	 * @param allPositions
+	 */
+	private static void setPositionToCity(List<City> allCities, List<Position> allPositions){		
+		
+		int j, k, posid, cityid;
+
+		//for each city in list
+		for(j=0; j<allCities.size(); j++){
+		
+			//create a temp position list
+			List<Position> temp = new ArrayList<Position>();
+			
+			//find the city id
+			cityid = allCities.get(j).getCityIdentifier();
+			
+			//for each position in mapping
+			for(k=0; k<db.getPositionsPerCity().get(cityid).length; k++){
+				
+				//found a new position for this city id
+				posid = db.getPositionsPerCity().get(cityid)[k];
+				
+				//add the pos as obj in the pos temp list (-1 because pos numb in matrix is +1)
+				temp.add(allPositions.get(posid-1));
+				
+			}
+			
+			//store the pos list in region (object)
+			allCities.get(j).setAdjPositions(temp);
+			
+		}
+	}
+	
+	/**
+	 * INITIALIZE REGIONS
+	 * For each region: set the plot type and add a sheep
+	 * @param regionPileByPlotType
+	 * @param allRegions
+	 * @param allSheeps
+	 * @throws RemoteException 
+	 */
+	private static void initRegions(List<List<Region>> regionPileByPlotType, List<Region> allRegions, List<Sheep> allSheeps){
+		
+		int i, k, seq=0;
+		
+		//for each plot type
+		for(i=0; i<regionPileByPlotType.size(); i++){
+			
+			//for each region per plot type
+			for(k=0; k<db.getRegionPerPlotNum(); k++){
+				
+				//initialize a new region object with id
+				Region temp = new Region(seq, allSheeps.get(seq), db.getPlotTypes().get(i));
+				
+				//add the obj to the region's list
+				allRegions.add(temp);
+				
+				//add the obj to the region per plot type pile
+				regionPileByPlotType.get(i).add(temp);
+				
+				//sequential id
+				seq++;
+			}
+		}
+	}
+	
+	/**
+	 * INITIALIZE CITIES
+	 * Create all the cities in related list | pass a sequential id
+	 * For each city: set a new black sheep and set the adjacent positions
+	 * @param allCities
+	 * @throws RemoteException 
+	 */
+	private static void initCity(List<City> allCities, List<SheepBlack> allBSheeps){
+		//for each city
+		for(int i=0; i<db.getCityRegionNum(); i++){
+			//set all black sheeps in the first city
+			//id:   reg = total region number from game + sequential (i)  |  city = sequential (i)
+			allCities.add(new City(db.getRegionNum()+i, i, (i < allBSheeps.size() ? allBSheeps.get(i) : null) ));
+		}
+		//for each black sheep
+		for(int j=0; j<allBSheeps.size(); j++){
+			//set target as the first city
+			allBSheeps.get(j).setTarget(allCities.get(0));
+		}
+	}
+	
+	/**
+	 * SET ADJACENTS POSITIONS TO A POSITION
+	 * NOTE: position must be already initialized
+	 * @param allPositions
+	 */
+	private static void setPositionAdjToPosition(List<Position> allPositions){
+		
+		int i, j, adjid;
+		
+		//for each position
+		for(i=0; i<allPositions.size(); i++){
+			
+			//for each adj pos to i
+			for(j=0; j<db.getPositionsAdjacentsMatrix().get(i).length; j++){
+				
+				//find id of adj position 
+				adjid = db.getPositionsAdjacentsMatrix().get(i)[j];
+				
+				//add a new adjacent position (-1 because pos numb in matrix is +1)
+				allPositions.get(i).addAdjPosAroundThis(allPositions.get(adjid-1));
+				
+			}
+		}
+	}
+	
+	/**
+	 * ADD CITIES TO REGIONS LIST
+	 * For each city: add city to allregions list
+	 * @param allCities
+	 * @param allRegions
+	 */
+	private static void addCityToRegionList(List<City> allCities, List<Region> allRegions){
+		for(int i=0; i<allCities.size(); i++){
+			allRegions.add(allCities.get(i));
+		}
+	}
+	
+	/**	
+	 * SHUFFLE THE INITIAL CARDS FOR PILE ASSIGNATION
+	 */
+	private static void shuffleInitialCardsPile(List<InitialCard> initialCardsPile){
+		
+		Random rnd = new Random();
+		int one, two;
+		
+		for(one=0; one<db.getPlotTypesNum(); one++){
+			
+			//save each in a temp obj
+			InitialCard temp = initialCardsPile.get(one);
+			
+			//shuffle a new random on db's limit
+			two = rnd.nextInt(db.getPlotTypesNum());
+			
+			//mix the list
+			initialCardsPile.set(one, initialCardsPile.get(two));
+			initialCardsPile.set(two, temp);
+			
+		}
+		
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+}

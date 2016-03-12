@@ -1,0 +1,142 @@
+package game.server.controller;
+
+import java.rmi.RemoteException;
+import java.util.List;
+
+import game.server.model.Dice;
+import game.server.model.Game;
+import game.server.model.Position;
+import game.server.model.Region;
+import game.server.model.SheepBlack;
+import game.server.view.ViewerInterface;
+
+/**
+ * MOVE MANAGEMENT CLASS
+ * For BlackSheeps auto and manual move
+ * 
+ * @author Leonardo
+ */
+public class MoveBlackSheep {
+
+	/**
+	 * Main black sheep auto jump method
+	 * @throws RemoteException 
+	 */
+	public static void moveBlackSheepAutoJump(Game game, SheepBlack bsheep, List<Region> allRegions, Dice dice, ViewerInterface mainGameViewer){
+		
+		//get random number
+		int rndnum = dice.getNewRandomNum();
+		
+		//notify
+		mainGameViewer.showNewRandomDice(rndnum);
+		
+		//get adj pos to sheep
+		List<Position> tmpPos = bsheep.getTarget().getBorders();
+		
+		//while the move is not completed
+		//and for each position adjacent
+		for(int i=0; i<tmpPos.size() && !game.isBSheepBeenMoved(); i++){
+			
+			//check if rnd num match to showed num in map's position
+			if(tmpPos.get(i).getPosViewVal() == rndnum){
+				
+				//check if position is busy				
+				if(!CheckMove.isPositionBusy(tmpPos.get(i))){
+					//position free
+					blackSheepAutoJumpAllowed(game, bsheep, allRegions, tmpPos.get(i), mainGameViewer);
+				}else{
+					//position busy
+					blackSheepAutoJumpNotAllowed(game, tmpPos.get(i), mainGameViewer);
+				}
+				
+			}
+		}
+	}
+	
+	//BLACK SHEEP CAN AUTO-JUMP (ENGINE)
+	private static void blackSheepAutoJumpAllowed(Game game, SheepBlack bsheep, List<Region> allRegions, Position tmpPos, ViewerInterface mainGameViewer){
+		
+		//create a region to move the black sheep
+		Region nextReg = new Region();
+		
+		//retrieve the previous region obj for this black sheep
+		Region prevReg = bsheep.getTarget();
+		
+		//search for other region with same position
+		nextReg = CheckMove.findSecondRegionWithSamePos(allRegions, tmpPos, bsheep.getTarget().getRegionIdentifier(), mainGameViewer);
+		
+		//move (add) black sheep
+		nextReg.addANewBlackSheep(bsheep);
+		bsheep.setTarget(nextReg);
+		
+		//notify
+		mainGameViewer.notifyBSheepAutoMove(true);
+		mainGameViewer.notifyMoveSuccessBSheep(bsheep.getSheepIdentifier(), prevReg.getRegionIdentifier(), nextReg.getRegionIdentifier());
+		
+		//move (remove) black sheep
+		prevReg.removeABlackSheep();
+		
+		//set as move
+		game.setBSheepBeenMoved(true);
+	}
+	
+	//BLACK SHEEP CANNOT AUTO-JUMP (ENGINE)
+	private static void blackSheepAutoJumpNotAllowed(Game game, Position tmpPos, ViewerInterface mainGameViewer){
+		
+		//motivation
+		String posBusyBy = tmpPos.getLastObjOverPos().getObjType();
+		
+		//notify
+		mainGameViewer.notifyBSheepAutoMove(false);
+		mainGameViewer.notifyMoveAbortBSheepAutoJump(posBusyBy);
+		
+		//set as not move
+		game.setBSheepBeenMoved(false);
+	}
+	
+	
+	/**
+	 * AUXILIARY METHODS FOR MANUAL SHEEP MOVEMENT
+	 */
+	
+	//BLACK SHEEP SELECTION ENGINE
+	public static boolean moveBlackSheepBetweenRegions(Game game, Region prevBSheepReg, Region nextBSheepReg, ViewerInterface mainGameViewer, boolean isTest){
+				
+		boolean thisCombination;
+		
+		//TEST CLAUSE ONLY
+		if(!isTest){
+			//requested for every combination of 
+			//ask if move sheep found
+			thisCombination = mainGameViewer.askForBSheepToMove(prevBSheepReg.getRegionIdentifier()+1, nextBSheepReg.getRegionIdentifier()+1);
+		}else{
+			//OVERRIDE FOR TEST
+			thisCombination = true;
+		}
+		
+		if(thisCombination){
+			
+			//invoke move method
+			moveThisBlackSheep(prevBSheepReg.getLastBlackSheepInThisRegion(), prevBSheepReg, nextBSheepReg);
+			
+			//notify
+			mainGameViewer.notifyMoveSuccessBSheep(nextBSheepReg.getLastSheepInThisRegion().getSheepIdentifier()+1, prevBSheepReg.getRegionIdentifier()+1, nextBSheepReg.getRegionIdentifier()+1);
+			
+			//update move count
+			game.increaseMoveDoneCountByOne();
+			
+			//set as move
+			game.setSheepBeenMoved(true);
+		}
+		
+		return thisCombination;
+	}
+	
+	//BLACK SHEEP REAL MOVEMENT EXECUTOR
+	private static void moveThisBlackSheep(SheepBlack bsheep, Region prevSheepReg, Region nextSheepReg){
+		nextSheepReg.addANewBlackSheep(bsheep);
+		prevSheepReg.removeABlackSheep();
+		bsheep.setTarget(nextSheepReg);
+	}
+	
+}

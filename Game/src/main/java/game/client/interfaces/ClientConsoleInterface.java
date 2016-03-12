@@ -1,0 +1,99 @@
+package game.client.interfaces;
+
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+import java.rmi.registry.Registry;
+
+public interface ClientConsoleInterface extends Remote {
+	
+	/**
+	 * Get assigned to player
+	 * @return
+	 * @throws RemoteException
+	 */
+	int getAssignedToPlayer() throws RemoteException;
+	
+	/**
+	 * Set assigned to player
+	 * @param i
+	 * @throws RemoteException
+	 */
+	void setAssignedToPlayer(int i) throws RemoteException;
+
+	/**
+	 * Print to a client console
+	 * a string generic message
+	 * @param message
+	 * @throws RemoteException
+	 */
+	void showOnClient(String message) throws RemoteException;
+	
+	/**
+	 * Request from client console a int
+	 * @return
+	 * @throws RemoteException
+	 * @throws InterruptedException
+	 */
+	int readFromClient() throws RemoteException;
+	
+	/**
+	 * Request from client console a string
+	 * @return
+	 * @throws RemoteException
+	 * @throws InterruptedException
+	 */
+	String readFromClientStr() throws RemoteException;
+	
+	/**
+	 * Log an exception in the client
+	 * @param str
+	 * @param e
+	 * @throws RemoteException
+	 */
+	void exceptionClientLogger(String str, Exception e) throws RemoteException;
+	
+	/**
+	 * 
+	 * @param str
+	 * @param e
+	 * @throws RemoteException
+	 */
+	void silentExceptionClientLogger(String str, Exception e) throws RemoteException;
+	
+	/**
+	 * Log an exception in the client
+	 * @param registry
+	 * @throws RemoteException
+	 */
+	void showAllObjectsOnRegistry(Registry registry) throws RemoteException;
+	
+	/**
+	 * Clear system console screen 
+	 * @throws RemoteException
+	 */
+	void clearConsole() throws RemoteException;
+	
+	/**
+	 * Show the game window
+	 * @param totalPlayersNum
+	 * @return
+	 * @throws RemoteException
+	 * @throws InterruptedException
+	 */
+	boolean showGameWindow(int totalPlayersNum) throws RemoteException;
+		
+	/**
+	 * 
+	 * @param command
+	 * @param options
+	 * @throws RemoteException
+	 */
+	void receiveCommandFromServer(String command, String options) throws RemoteException;
+	
+	/**
+	 * PLAY A SOUND ON CLIENT
+	 * @param name
+	 * @throws RemoteException
+	 */
+	void playSound(String name) throws RemoteException;
+}

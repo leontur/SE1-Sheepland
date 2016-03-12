@@ -1,0 +1,67 @@
+package game.client.view.gui.model;
+
+import game.client.view.gui.StaticObject;
+
+import java.awt.Image;
+import java.io.File;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+
+/**
+ * ENCLOSURE (FINAL)
+ * OBJECT CLASS
+ * 
+ * INHERIT ABILITY FROM SUPERCLASSES
+ * 
+ * @author Leonardo
+ */
+public class FinalEnclosure extends StaticObject {
+	
+	/**
+	 * CLASS SERIAL VERSION ID
+	 */
+	private static final long serialVersionUID = 1L;
+	
+	/**
+	 * CLASS VARS
+	 */
+	//imgs for each direction
+	private ImageIcon img;
+	private static int enclosureNum;
+	
+	//scaling
+	private int boundX = 20;
+	private int boundY = boundX;
+
+	/**
+	 * CLASS CONTSTRUCTOR
+	 */
+	public FinalEnclosure(int id){
+		
+		//set id
+		enclosureNum = id;
+		
+		try{
+			//get files
+			img = new ImageIcon(ImageIO.read(new File(dirPath + "finalenclosure.png")));
+			//scaling
+			img = new ImageIcon(img.getImage().getScaledInstance(boundX, boundY, Image.SCALE_AREA_AVERAGING));
+		}catch (IOException e){
+			Thread.currentThread().interrupt();
+		}
+		
+		setBounds(0, 0, boundX, boundY);
+		setIcon(img);
+	}
+		
+	
+	public void setFinalEnclosureNum(int i){
+		enclosureNum = i; 
+	}
+	public int getFinalEnclosureNum(){
+		return enclosureNum;
+	}
+
+}

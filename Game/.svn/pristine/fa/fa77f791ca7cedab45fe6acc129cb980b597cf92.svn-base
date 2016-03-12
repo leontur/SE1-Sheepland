@@ -1,0 +1,32 @@
+package game.client.interfaces;
+
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+import java.rmi.registry.Registry;
+
+public interface ClientConsoleInterface extends Remote {
+	
+	int getAssignedToPlayer() throws RemoteException;
+	
+	void setAssignedToPlayer(int i) throws RemoteException;
+
+	void showOnClient(String message) throws RemoteException;
+	
+	int readFromClient() throws RemoteException, InterruptedException;
+	
+	String readFromClientStr() throws RemoteException, InterruptedException;
+	
+	void exceptionClientLogger(String str, Exception e) throws RemoteException;
+	
+	void silentExceptionClientLogger(String str, Exception e) throws RemoteException;
+	
+	void showAllObjectsOnRegistry(Registry registry) throws RemoteException;
+	
+	void clearConsole() throws RemoteException;
+	
+	boolean showGameWindow(int totalPlayersNum) throws RemoteException, InterruptedException;
+		
+	void receiveCommandFromServer(String command, String options) throws RemoteException;
+	
+	void playSound(String name) throws RemoteException;
+}

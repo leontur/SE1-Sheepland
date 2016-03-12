@@ -1,0 +1,68 @@
+package game.server.controller;
+
+import static org.junit.Assert.*;
+
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
+
+import game.server.model.Dice;
+import game.server.model.Game;
+import game.server.model.Position;
+import game.server.model.Region;
+import game.server.model.Sheep;
+import game.server.model.Wolf;
+import game.server.view.Console;
+import game.server.view.ViewerInterface;
+
+import org.junit.Test;
+
+/**
+ * Move management-test class
+ * For Wolf
+ * 
+ * @author Dario
+ */
+public class MoveWolfTest {
+
+	/**
+	 *  Check the correct movement of a wolf
+	 */
+	@Test
+	public void moveWolfAutoJumpTest() throws RemoteException{
+		
+		Game game = new Game();
+		ViewerInterface mainGameViewer = new Console(game);
+		Dice dice = new Dice();
+		Wolf wolf = new Wolf(0, null);
+		
+		//reg
+		List<Region> allRegions = new ArrayList<Region>();
+		allRegions.add(new Region(0, null, "hill"));
+		allRegions.add(new Region(1, null, "hill"));
+		
+		//sheep
+		List<Sheep> allSheeps = new ArrayList<Sheep>();
+		allSheeps.add(new Sheep(0));
+		allSheeps.add(new Sheep(1));
+		
+		//pos
+		List<Position> adjPos = new ArrayList<Position>();
+		Position checkpos = new Position(0,1);
+		adjPos.add(checkpos);
+		adjPos.add(new Position(1,0));
+		
+		//set poss
+		allRegions.get(0).setAdjPositions(adjPos);
+		allRegions.get(1).setAdjPositions(adjPos);
+		
+		//set values
+		game.setGameAllRegions(allRegions);
+		wolf.setTarget(allRegions.get(0));
+		
+		//check
+		MoveWolf.moveWolfAutoJump(game, wolf, allRegions, allSheeps, dice, mainGameViewer, true);
+		assertTrue(wolf.getTarget().getRegionIdentifier() == 1);
+	}
+}
+

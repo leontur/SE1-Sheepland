@@ -1,0 +1,110 @@
+package game.server.controller;
+
+import static org.junit.Assert.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import game.server.model.Database;
+import game.server.model.Game;
+import game.server.model.Position;
+import game.server.model.Region;
+
+import org.junit.Test;
+
+public class CheckMoveTest {
+	
+	Database db = new Database();
+
+	@Test
+	public void moveSequenceCheckTest() {
+		Game game = new Game();
+		int selectedMove = 1;
+		CheckMove.moveSequenceCheck(game, selectedMove);
+		if(presetMoveSequence1Test(game, selectedMove) || presetMoveSequence2Test(game, selectedMove)){
+			assertTrue(true);
+		}
+	}
+
+	private boolean presetMoveSequence2Test(Game game, int selectedMove) {
+		for(int i=0; i<db.getMaxMovementCount()-1; i++){
+		if(game.isSheepBeenMoved() && !game.isShepherdBeenMoved()){	
+		moveSequenceCheckTest();
+			}
+		}
+		return false;
+	}
+
+	private boolean presetMoveSequence1Test(Game game, int selectedMove) {
+		for(int i=0; i<db.getMaxMovementCount(); i++){
+		if(game.isCardBeenBought() && !game.isShepherdBeenMoved()){
+			moveSequenceCheckTest();
+			}
+		}
+		
+		return false;
+	}
+	
+	@Test
+	public void isPositionBusyTest(){
+		Position pos = new Position();
+		assertNotNull(pos.isObjOverPos());
+	}
+	
+	@Test
+	public void isPositionAdjacentTest(){
+		Position pos1 = new Position();
+		Position pos2 = new Position();
+		CheckMove.isPositionAdjacent(pos1, pos2);
+		if(pos1.getAllAdjPosAroundThis().contains(pos2) || pos2.getAllAdjPosAroundThis().contains(pos1)){
+			assertTrue(true);
+		}
+	}
+		
+		@Test
+		public void findRegionsWithSamePosTest(){
+			List<Region> allRegions = new ArrayList<Region>();
+			allRegions.add(new Region(1, null, "hill"));
+			
+			Position pos = new Position(2,0);
+			
+			
+			List<Position> adjpos1 = allRegions.get(4).getBorders();
+			List<Position> adjpos2 = allRegions.get(5).getBorders();
+			
+			
+			CheckMove.findRegionsWithSamePos(allRegions, pos);
+					if(allRegions.size() != allRegions.size()){
+				assertTrue(true);
+			}
+			
+			else if(scrollPositionsTest(adjpos1, adjpos2, pos)){
+				assertTrue(true);
+			}
+		}
+
+		private boolean scrollPositionsTest(List<Position> adjpos1, List<Position> adjpos2, Position pos) {
+			if(adjpos1.get(1) == pos && adjpos2.get(3) == pos){
+			findRegionsWithSamePosTest();
+			}
+			return false;
+		}
+		
+	/*	@Test
+		public void (){
+			List<Region> allRegion1 = new ArrayList<Region>();
+			allRegion1.add(new Region(2, null, "forest"));
+			
+			Position pos1 = new Position(2,0);
+			
+			List<Position> adjpos3 = allRegion1.get(2).getBorders();
+			List<Position> adjpos4 = allRegion1.get(3).getBorders();
+			
+			CheckMove.findRegionsWithSamePos(allRegion1, pos1);
+			
+			if(CheckMove.findRegionsWithSamePos(allRegion1, pos1))
+			
+		}*/
+		
+
+}

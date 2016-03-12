@@ -1,0 +1,158 @@
+package game.server.controller;
+
+import java.util.logging.FileHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+
+/**
+ * MAIN LOGGER CLASS
+ * requested (as new object) by all game's classes for a simple file logging
+ *  
+ *  -how to log:
+ *  	CustomLogger.logEx(getClass().getName(), "requestIntInput", "is requested an integer", Level.WARNING, e);
+ *  	CustomLogger.logInfo(getClass().getName(), "doMoveShepherd", "no more dinars: player " + i);
+ *  
+ *  -allowed messages:
+ *    entering(String sourceClass, String sourceMethod);
+ *    exiting (String sourceClass, String sourceMethod);
+ *    config  (String message);
+ *    info    (String message);
+ *    warning (String message);
+ *    severe  (String message);
+ *    throwing(String sourceClass, String sourceMethod, Throwable t);
+ *    see: http://tutorials.jenkov.com/java-logging/logger.html
+ * 
+ * @author Leonardo
+ */
+public class CustomLogger {
+	
+	/**
+	 * MAIN SWITCH FOR LOGGER FEATURE
+	 * SET TO TRUE TO ENABLE, FALSE TO DISABLE
+	 * NOTE: on disabled mode, no operation will be activated
+	 */
+	private static boolean isEnabled = false;
+	
+	/**
+	 * MAIN SWITCH FOR FILE LOG WRITER FEATURE
+	 * set to true enable the logging on file in the dir 'logs'
+	 */
+	private static boolean isFileInit = false;
+	
+	/**
+	 * DEFAULT CONSTRUCTOR
+	 * static class - to avoid instantiation
+	 */
+	private CustomLogger(){
+	}
+	
+	/**
+	 * LOGGER INITIALIZATION
+	 */
+	
+	/**
+	 * EVENT LOGGER
+	 */
+	private static final Logger LOGGER = Logger.getLogger(CustomLogger.class.getName() + "-event");
+	
+	/**
+	 * GAME HISTORY LOGGER
+	 */
+	private static final Logger LOGGER_HISTORY = Logger.getLogger(CustomLogger.class.getName() + "-history");
+	
+	/**
+	 * Log EXCEPTION method used to write the passed exception
+	 */
+	public static void logEx(String classname, String methodname, String message, Level level, Exception ex) {
+		if(isEnabled){
+			initializeFileLogFeature();
+			LOGGER.entering(classname, methodname);
+			LOGGER.log(level, message, ex); 
+			LOGGER.exiting(classname, methodname);
+		}
+	}
+	
+	/**
+	 * Log INFO method used to write the passed message
+	 */
+	public static void logInfo(String classname, String methodname, String message) {
+		if(isEnabled){
+			initializeFileLogFeature();
+			LOGGER.info(message);
+			LOGGER.exiting(classname, methodname);
+		}
+	}
+	
+	/**
+	 * Log INFOEX method used to write the passed message and the exception simple cause
+	 */
+	public static void logInfoEx(String classname, String methodname, String message, Exception e) {
+		if(isEnabled){
+			initializeFileLogFeature();
+			LOGGER.info(message + "  " + e.getCause());
+			LOGGER.exiting(classname, methodname);
+		}
+	}
+	
+	/**
+	 * Log CONFIG method used to write the passed message
+	 */
+	public static void logConfig(String classname, String methodname, String message) {
+		if(isEnabled){
+			initializeFileLogFeature();
+			LOGGER.info("(CONFIG) " + message);
+			LOGGER.exiting(classname, methodname);
+		}
+	}
+	
+	/**
+	 * Log CONFIG method used to write the passed message
+	 */
+	public static void logConsoleHistory(String classname, String methodname, String message) {
+		if(isEnabled){
+			initializeFileLogFeature();
+			//entering(classname, methodname)
+			LOGGER_HISTORY.info("" + message);
+			LOGGER_HISTORY.exiting(classname, methodname);
+		}
+	}
+	
+	/**
+	 * Initializer for file init feature
+	 */
+	private static void initializeFileLogFeature(){
+		//call file-write feature
+		if(isEnabled){
+			setFile(LOGGER, "event");
+			setFile(LOGGER_HISTORY, "history");
+			isFileInit = true;
+		}
+	}
+	
+	/**
+	 * Add to console logger the file-write feature
+	 * to remove console handler: logger.setUseParentHandlers(false)
+	 * 
+	 * @param logger
+	 */
+	private static void setFile(Logger logger, String subfol){
+		if(!isFileInit && isEnabled){
+			try {
+				
+				FileHandler fh;
+		        fh = new FileHandler("logs/" + subfol + "/" + subfol + "CustomLogger" + ".log");
+		        
+		        logger.addHandler(fh);
+		        
+		        SimpleFormatter formatter = new SimpleFormatter();
+		        fh.setFormatter(formatter);
+		        
+		    }catch(Exception e){
+		    	//logger exception must be shown
+		    	System.err.println(e.getMessage());
+		    }
+		}
+	}
+	
+}

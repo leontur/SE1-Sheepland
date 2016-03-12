@@ -1,0 +1,96 @@
+package game.client.view;
+
+import javax.swing.*;
+import javax.swing.text.DefaultCaret;
+
+/**
+ * GUI INTERFACE THAT PRINT IN A WINDOW
+ * THE CONSOLE OUTPUT
+ * 
+ * 
+ * @author Leonardo
+ *
+ */
+public class ClientConsoleGui extends JFrame implements Runnable {
+
+	
+	/**
+	 * CLASS VARS
+	 */
+	private static final long serialVersionUID = 1L;
+	private static JTextArea textArea;
+	private static boolean isInit = false;
+	
+	/**
+	 * Append text to the scrollable text area, in view console gui
+	 * @param message
+	 */
+	public static void showOnConsoleGui(String message){
+		textArea.append("\n");
+		textArea.append(message);
+	}
+		
+	/**
+	 * Create a new window
+	 * with a inner scrollable text area
+	 */
+	public void run() {
+		
+		if(isInit){
+			return;
+		}
+		
+		setTitle("Sheepland | ConsoleGui");
+		//setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setSize(500, 700 + getInsets().top);
+		setResizable(true);
+		
+		textArea = new JTextArea();
+		textArea.setSize(500, 700);
+		textArea.setEditable(false);
+		textArea.setHighlighter(null);
+		textArea.setEnabled(false);
+		//textArea.setBackground(new Color(0, 255, 192, 10));
+		textArea.append("THIS IS THE SHEEPLAND GUI CONSOLE");
+		
+		DefaultCaret caret = (DefaultCaret)textArea.getCaret();
+		caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+		
+		JScrollPane scroll = new JScrollPane(
+				textArea, 
+				JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, 
+				JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS
+				);
+
+		/*
+		JLabel label1 = new JLabel("Test");
+		label1.setText("INPUT");
+
+		final JTextField field = new JTextField(20);
+		
+		//input listener
+		field.addActionListener(
+				new ActionListener(){
+					@SuppressWarnings("unused")
+					public void keyReleased(KeyEvent e){
+						if( e.getKeyCode() == KeyEvent.VK_ENTER ){
+							//get text
+							String outcome = field.getText();
+							int in = Integer.parseInt(outcome);
+						}
+					}
+					public void actionPerformed(ActionEvent arg0) {}
+				});
+				
+		add(label1);
+		add(field, BorderLayout.SOUTH);
+		*/
+		
+		add(scroll);
+		setVisible (true);
+		
+		isInit = true;		 
+		
+	}
+	
+}

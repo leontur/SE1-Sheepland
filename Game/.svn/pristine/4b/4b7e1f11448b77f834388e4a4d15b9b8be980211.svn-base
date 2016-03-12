@@ -1,0 +1,165 @@
+package game.server.controller;
+
+import static org.junit.Assert.*;
+import game.server.model.*;
+
+import org.junit.Test;
+
+/**
+ * Initializer test class
+ * 
+ * @author Dario
+ *
+ */
+public class InitializerTest {
+	
+	//CLASS VARS
+	private static Game game = new Game();
+	private static Database db = new Database();
+	
+	/**
+	 *  Initialization of the main map
+	 *  
+	 */
+	@Test
+	public void initMainMapTest(){
+		Initializer.initMainMap(game);
+		
+		initialCardsTest();
+		shuffleInitialCardsPile();
+		initializeAllPilesTest();
+		initPositionsTest();
+		setPositionAdjToPositionTest();
+		initRegionsTest();
+		setPositionToRegionTest();
+		initCityTest();
+		setPositionToCityTest();
+		addCityToRegionListTest();
+		initEnclosuresTest();
+		initFinalEnclosuresTest();
+		initShepherdsTest();
+		initDinarsTest();
+		initWolfTest();
+		initSheepsTest();
+		initBSheepsTest();
+	}
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////
+	
+	/**
+	 * Initialize the initial cards 
+	 *  NOTE: the initial card class is super for standard card
+	 */
+	private void initialCardsTest(){
+		assertEquals(game.getGameInitialCardsPile().size(), db.getPlotTypesNum());
+	}
+	
+	
+	
+	private void shuffleInitialCardsPile(){
+		assertEquals(game.getGameInitialCardsPile().size(), db.getPlotTypesNum());
+	}
+	
+	
+	
+	private void initializeAllPilesTest(){
+		assertEquals(game.getGamePlotCardsPileByPlotType().size(), db.getPlotTypes().size());
+	}
+	
+	
+	
+	private void initPositionsTest(){
+		assertEquals(game.getGameAllPositions().size(), db.getPositionNum());
+	}
+	
+	
+	
+	private void setPositionAdjToPositionTest(){
+		assertEquals(game.getGameAllPositions().size(), db.getPositionNum());
+	}
+	
+	
+	
+	private void initSheepsTest(){
+		assertEquals(game.getGameAllSheeps().size(), db.getSheepNum());
+	}
+	
+
+	
+	private void initRegionsTest(){
+		if((game.getGameRegionPileByPlotType().size() == db.getPlotTypes().size() && game.getGameAllRegions().size() == db.getRegionNum()) 
+			|| game.getGameAllSheeps().size() == db.getSheepNum()){
+		assertTrue(true);
+		}
+	}
+	
+	
+	
+	private void setPositionToRegionTest(){
+		if(game.getGameRegionPileByPlotType().size() == db.getPlotTypes().size() && game.getGameAllPositions().size() == db.getPositionNum()){
+			assertTrue(true);
+		}
+	}
+	
+	
+	
+	private void initBSheepsTest(){
+		assertEquals(game.getGameAllBSheeps().size(), db.getSheepBNum());
+	}
+	
+	
+	
+	private void initCityTest(){
+		if(game.getGameAllCities().size() == db.getCityRegionNum() && game.getGameAllBSheeps().size() == db.getSheepBNum()){
+			assertTrue(true);
+		}
+	}
+	
+	
+	
+	private void setPositionToCityTest(){
+		if(game.getGameAllCities().size() == db.getCityRegionNum() && game.getGameAllPositions().size() == db.getPositionNum()){
+			assertTrue(true);
+		}
+	}
+	
+	
+	
+	private void addCityToRegionListTest(){
+		if(game.getGameAllCities().size() == db.getCityRegionNum() && game.getGameAllRegions().size() == db.getRegionNum()){
+			assertTrue(true);
+		}
+	}
+	
+	
+	
+	private void initEnclosuresTest(){
+		assertEquals(game.getGameAllStandardEnclosures().size(), db.getEnclosureNum());
+	}
+	
+	
+	
+	private void initFinalEnclosuresTest(){
+		assertEquals(game.getGameAllFinalEnclosures().size(), db.getFinalEnclosureNum());
+	}
+	
+	
+	
+	private void initShepherdsTest(){
+		assertEquals(game.getGameAllShepherds().size(), db.getTotShepherdNum());
+	}
+	
+	
+	
+	private void initDinarsTest(){
+		assertEquals(game.getGameAllDinars().size(), db.getDinarsTotNum());
+	}
+	
+	
+	
+	private void initWolfTest(){
+		assertNotNull(game.getGameWolf());
+	}
+	
+	
+}

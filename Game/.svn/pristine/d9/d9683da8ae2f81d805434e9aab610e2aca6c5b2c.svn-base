@@ -1,0 +1,184 @@
+package game.server.socket;
+
+import game.server.controller.CustomLogger;
+import game.server.model.Game;
+import game.server.socket.WaitPlayer;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.logging.Level;
+
+/**
+ * SOCKET
+ * LISTENING AND MANAGING 
+ * CLASS
+ */
+public class ManageSocket {
+	
+    //port
+    private static final int DEFAULT_PORT = 4000;
+    
+    //breaker var
+    private static boolean sync = false;
+    
+    //player waiting vars
+    private static int thisGamePlayersNumber = StartSocket.getPlayersNumber();
+
+	/**
+	 * Create n socket as players for this game
+	 * Called from game manage before the initialization of new game
+	 * @throws IOException 
+	 */
+	public static void setSocketViews(int player, Game game) throws IOException{
+		
+		//for each logged player
+		for(int i=0; i<player; i++){
+			
+			//create a socket in a personalized port
+			//4001 4002 4003 4004
+			int playerPort = DEFAULT_PORT + i + 1;
+			
+			//allocation
+			ServerSocket server = new ServerSocket(playerPort);
+
+			//add to game list
+			game.addViewerToSocketList(server);
+		}		
+	}
+	
+	/**
+	 * RUN IN NEW THREAD
+	 * Listener for clients in port 4000
+	 * This server gives a progressive number to all clients.
+	 * Sync var is a breaker for timeout
+	 */
+	public static void startServerListenerForGamers(final Game game){
+		//create a thread
+        Runnable task = new Runnable() {
+            public void run() {
+            	
+            	//start engine
+            	startServerListenerForGamersEngine(game);
+            }
+        };
+        //run task
+        new Thread(task).start();
+	}
+	
+	private static void startServerListenerForGamersEngine(Game game){
+		try {
+        	
+        	//allocation of listener
+        	ServerSocket server = new ServerSocket(DEFAULT_PORT);
+        	
+        	//search for clients..
+        	while(!sync){
+
+                //creating socket
+        		//waiting for client connection
+                Socket socket = server.accept();
+                
+                //read from socket
+                ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+                
+                //convert in to string
+                String clientMsg = (String) in.readObject();
+                
+                //if client request is for new port (and login)
+                if("#port-login#".equals(clientMsg)){
+                	
+                	String portToSend = addNewPlayer(game);
+                	
+                    //create output
+                    ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+                    
+                    //write progressive port to client
+                    out.writeObject(portToSend);
+                    
+                    //end
+                    out.close();
+                }
+                
+                //close resources
+                in.close();
+                
+                //check for max players number (force break)
+    			if(StartSocket.getPlayersNumber()>=4){
+    				StartSocket.setWaitForPlayerFalse();
+    				break;
+    			}
+    			
+    			Thread.sleep(1000);
+            }
+        	
+            //close server socket
+            server.close();
+        	
+        } catch (Exception ex) {
+            CustomLogger.logEx("ManageSocket", "startServerListenerForGamersEngine", "impossible to continue to listen for clients..", Level.SEVERE, ex);
+        }
+	}
+	
+	/**
+	 * called from Socket Server
+	 * add a new player
+	 * set the game counter +1
+	 * set the rmi counter +1
+	 * stop the waiting for this specific player
+	 */
+	private static String addNewPlayer(Game game) {
+		
+		//execute only if max player number was not reached
+		if(StartSocket.getPlayersNumber()<4){
+			
+			//notify
+			game.getGameViewer().printToConsole("Adding new player as ID: " + thisGamePlayersNumber);
+			
+			//increment counter
+			thisGamePlayersNumber++;
+			
+			//set increased value
+			StartSocket.setPlayersNumber(thisGamePlayersNumber);
+			
+			//set counter
+			game.setCurrentPlayerCounter(thisGamePlayersNumber);
+			
+			//StopWaiting
+			WaitPlayer.setSync(true);
+		
+			//create string [id]#[port]
+			String msgToClient = Integer.toString(thisGamePlayersNumber-1) + "#" +  Integer.toString(DEFAULT_PORT + thisGamePlayersNumber);
+			
+			return msgToClient;
+		}
+		
+		return "-1";
+	}
+	
+	/**
+	 * SECONDARY METHODS
+	 */
+	
+	/**
+	 * Set true if sync
+	 * or set false otherwise
+	 * @param newsync
+	 */
+	public static void setSync(boolean newsync){
+		sync = newsync;
+	}
+	
+	/**
+	 * True if sync
+	 * or false otherwise
+	 * @return
+	 */
+	public static boolean isSync(){
+		return sync;
+	}
+	
+	
+}

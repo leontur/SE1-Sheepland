@@ -1,0 +1,25 @@
+
+		*** SHEEPLAND PROJECT ***
+  			> Group 14
+  			> Turchi - Rosolia
+		***  POLIMI | 05/2014 ***
+
+//////////////////////////////////////////////////
+
+	GAME STRUCTURE
+	----------------------
+	
+	-GAME
+	|
+	|	-CLIENT
+	|	|	-RMI
+	|	|	-SOCKET
+	|	|	-VIEW
+	|		|	-GUI
+	|			
+	|	-SERVER
+	|	|	-RMI
+	|	|	-SOCKET
+	|	|	-MODEL
+	|	|	-CONTROLLER
+	|	

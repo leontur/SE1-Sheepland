@@ -1,0 +1,214 @@
+package game.client.view.gui;
+
+import game.client.interfaces.ClientConsoleInterface;
+import game.client.rmi.StartClientRmi;
+import game.client.socket.SocketClientGuiUpdater;
+import game.client.socket.StartClientSocket;
+import game.client.view.ClientLogger;
+import game.client.view.gui.model.Sheepland;
+import game.server.interfaces.AddPlayerInterface;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * RUNNABLE IN NEW THREAD
+ * THIS CLASS
+ * CHECK FROM SERVER FOR UPDATES
+ * EVERY N SECONDS
+ * AND CALL THE UPDATE METHODS FOR MAP
+ * 
+ * @author Leonardo
+ *
+ */
+public class AutoUpdateEngine {
+	
+	private ClientConsoleInterface cci;
+	
+	/**
+	 * Async execution
+	 * @throws InterruptedException
+	 */
+	public void asyncUpdateService(final int time, final Sheepland obj, final boolean isSocketMode) throws InterruptedException{
+    	
+		//task used to create a thread
+        Runnable task = new Runnable() {
+            public void run() {
+                try {
+                	
+                	//Wait before start
+                	Thread.sleep(1000);
+                	
+            		//call engine
+            		manageUpdate(time, obj, isSocketMode);
+
+                } catch (Exception ex) {
+                    //handle error
+                	ClientLogger.silentExceptionClientLogger("AutoUpdateEngine", ex);
+                }
+            }
+        };
+        
+        //run task in new thread
+        Thread counter = new Thread(task);
+        counter.start();
+    }
+	
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //ENGINE
+	
+	@SuppressWarnings("unchecked")
+	private void manageUpdate(int time, Sheepland obj, boolean isSocketMode) throws Exception{
+		
+    	if(!isSocketMode){
+    	
+	    	////////////
+	    	//RMI MODE//
+	    	////////////
+	    	
+	    	//retrieve interface
+    		AddPlayerInterface api = StartClientRmi.getRemoteAddPlayerInterface();
+    		cci = StartClientRmi.getClientConsoleInterface();
+    		
+	    	//get current player number
+	    	int currPlayer = StartClientRmi.getClientId();
+	    	currPlayer--;
+	    	
+	    	//LOOP
+	    	while(obj.isRunningGame()){
+	   		
+	    		//CHECK AND SET UPDATES
+	    		
+	    		try{
+	    			//PAWNS
+		    		obj.updateRegionBusy(api.getGuiRegionBusy());
+		        	obj.updatePlayerShepherdPos(api.getGuiPlayersShepherdLoc());
+		        	obj.updatePlayerDinars(api.getGuiPlayerDinar(currPlayer));
+		        	obj.updatePlayerInitialCard(api.getGuiPlayerInitialCard(currPlayer));
+		        	obj.updatePlayerStandardCard(api.getGuiPlayerStandardCards(currPlayer));
+		        	obj.updateStandardEnclosure(api.getGuiStandardEnclosures());
+		        	obj.updateFinalEnclosure(api.getGuiFinalEnclosures());
+		        	obj.updatePositionBusy(api.getGuiPositionEnclosureBusy());
+		        	obj.updatePlayerNumber(currPlayer+1);
+		        	
+	    		}catch(Exception e){
+	    			//silent for initial phase of game
+	    			cci.silentExceptionClientLogger("AutoUpdateEngine ", e);
+	    		}
+	    		
+	        	try{
+		        	//GAME LOGIC
+		        	obj.updateCurrPlayerNum(api.getGuiCurrentPlayerNumber());
+		        	obj.updateDiceNum(api.getGuiLastDiceNum());
+		        	
+	    		}catch(Exception e){
+	    			cci.exceptionClientLogger("AutoUpdateEngine ", e);
+	    		}
+	    		
+	    		//wait for eventual repaints
+	    		Thread.sleep(500);
+	    		
+	    		try{
+	    			
+	    			//call main update functions
+	    			obj.performUpdate();
+	    			
+	    		}catch(Exception e){
+	    			//silent for initial phase of game
+	    			cci.silentExceptionClientLogger("AutoUpdateEngine - impossible to do map update", e);
+	    		}
+	    		
+	    		//wait between check for updates
+	    		Thread.sleep(time);
+	    		// -> next check until game ends
+	    	}
+	    		
+    	}else{
+    		
+    		///////////////
+	    	//SOCKET MODE//
+	    	///////////////
+
+			//retrieve interface
+			cci = StartClientSocket.getClientConsoleInterface();
+    		
+    		//get current player number
+	    	int currPlayer = StartClientSocket.getClientId();
+  	    	
+	    	//port for update
+	    	//5001 5002 5003 5004
+	    	int clientPort = 5000 + currPlayer + 1;
+  	    	
+	    	//debug
+	    	//cci.showOnClient("NEW GUI UPDATE MANAGER CREATED | on port " + clientPort);
+	    	
+	    	//commands from server 
+	    	//format: [command]#[vars]
+	    	String[] guiCmds = new String[]{
+    				"getGuiRegionBusy#",
+    				"getGuiPlayersShepherdLoc#",
+    				"getGuiPlayerDinar#" + currPlayer,
+    				"getGuiPlayerInitialCard#" + currPlayer,
+    				"getGuiPlayerStandardCards#" + currPlayer,
+    				"getGuiStandardEnclosures#",
+    				"getGuiFinalEnclosures#",
+    				"getGuiPositionEnclosureBusy#",
+    				"getGuiCurrentPlayerNumber#",
+    				"getGuiLastDiceNum#"
+    		};
+    	
+	    	//LOOP
+	    	while(obj.isRunningGame()){
+ 	    		
+	    		//CHECK AND SET UPDATES
+	    		try{
+	    			//PAWNS
+		    		obj.updateRegionBusy((ArrayList<int[]>) SocketClientGuiUpdater.requestUpdate(guiCmds[0], clientPort));
+		        	obj.updatePlayerShepherdPos((ArrayList<List<Integer>>) SocketClientGuiUpdater.requestUpdate(guiCmds[1], clientPort));
+		        	obj.updatePlayerDinars((Integer) SocketClientGuiUpdater.requestUpdate(guiCmds[2], clientPort));
+		        	obj.updatePlayerInitialCard((Integer) SocketClientGuiUpdater.requestUpdate(guiCmds[3], clientPort));
+		        	obj.updatePlayerStandardCard((ArrayList<List<String>>) SocketClientGuiUpdater.requestUpdate(guiCmds[4], clientPort));
+		        	obj.updateStandardEnclosure((Integer) SocketClientGuiUpdater.requestUpdate(guiCmds[5], clientPort));
+		        	obj.updateFinalEnclosure((Integer) SocketClientGuiUpdater.requestUpdate(guiCmds[6], clientPort));
+		        	obj.updatePositionBusy((ArrayList<Integer>) SocketClientGuiUpdater.requestUpdate(guiCmds[7], clientPort));
+		        	obj.updatePlayerNumber(currPlayer+1);
+		        	
+	    		}catch(Exception e){
+	    			//silent for initial phase of game
+	    			cci.silentExceptionClientLogger("AutoUpdateEngine ", e);
+	    		}
+	    		
+	        	try{
+		        	//GAME LOGIC
+		        	obj.updateCurrPlayerNum((Integer) SocketClientGuiUpdater.requestUpdate(guiCmds[8], clientPort));
+		        	obj.updateDiceNum((Integer) SocketClientGuiUpdater.requestUpdate(guiCmds[9], clientPort));
+		        	
+	    		}catch(Exception e){
+	    			cci.exceptionClientLogger("AutoUpdateEngine ", e);
+
+	    		}
+	    		
+	    		//wait for eventual repaints
+	    		Thread.sleep(500);
+	    		
+	    		try{
+	    			
+	    			//call main update functions
+	    			obj.performUpdate();
+	    			
+	    		}catch(Exception e){
+	    			//silent for initial phase of game
+	    			cci.silentExceptionClientLogger("AutoUpdateEngine - impossible to do map update", e);
+	    		}
+	    		
+	    		//wait between check for updates
+	    		Thread.sleep(time);
+	    		// -> next check until game ends
+	    	}
+    	}   
+    }
+       
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+}

@@ -1,0 +1,386 @@
+package game.server.controller;
+
+import java.io.IOException;
+import java.rmi.*;
+import java.util.logging.Level;
+
+import javax.naming.InterruptedNamingException;
+
+import game.server.controller.Counter;
+import game.server.interfaces.AddPlayerInterface;
+import game.server.model.Database;
+import game.server.model.Game;
+import game.server.socket.ManageSocket;
+import game.server.socket.SocketGuiUpdater;
+import game.server.view.ViewerInterface;
+
+/**
+ * NEW GAME MAIN INITIALIZATION CLASS
+ *  -REQUESTS THE INIT ENGINE IN CONTROLLER
+ *  
+ * REQUSTED FOR BOTH RMI AND SOCKET GAME INITIALIZATION
+ * 
+ * @author Leonardo
+ *
+ */
+public class GameManage implements Runnable {
+	
+	/**
+	 * TIMEOUT FOR THE INITIALIZATION TIME
+	 * time given to each client to initialize its player
+	 */
+	private static int PLAYER_INIT_WAIT_TIMEOUT = 30000;
+	
+	//class vars
+	private static boolean sync;
+	private Game game;
+	private ViewerInterface mainGameViewer;
+
+	//wait between initialization
+	private static int PLAYER_INIT_WAIT_RUN = 500;
+	
+	//connection mode var
+	private static boolean isSocketMode;
+	
+	//test mode var
+	private static boolean isTestMode = false;
+	
+	/**
+	 * CLASS CONTSTRUCTOR
+	 * 
+	 * @param game the new game instance just created
+	 * @param addPlayerInterface the interface for the client - server communication
+	 * @param isSocket set true for socket mode, else to false for rmi
+	 * @param isTest test mode will override the entire class for the test execution
+	 * @throws RemoteException
+	 */
+	public GameManage(Game game, AddPlayerInterface addPlayerInterface, boolean isSocket, boolean isTest) throws RemoteException {
+		
+		//request the main game created
+		this.game = game;
+		
+		//set correct game in the add interface
+		addPlayerInterface.setGameInterface(game);
+
+		//for new game creation
+		addPlayerInterface.setThisGamePlayersNumber(0);
+		
+		//when game starts
+		game.setPlayersNumber(addPlayerInterface.getCurrentPlayerNumbers());
+		
+		//import game viewer
+		mainGameViewer = game.getGameViewer();
+		
+		//update connection mode
+		isSocketMode = isSocket;
+		mainGameViewer.setIsSocketMode(isSocket);
+		
+		//update test mode
+		isTestMode = isTest;
+	}
+
+	/**
+	 * MAIN GAME MANAGE FUNCTION
+	 * RUN ON NEW THREAD
+	 * 
+	 * THIS METHOD
+	 *  - INIT
+	 *  - PLAY
+	 *  - NOTIFY
+	 *  - SAVE
+	 *  - END
+	 *  - LOG
+	 *  THE ENTIRE GAME
+	 */
+	public void run() {
+		
+		//TEST CLAUSE
+		if(isTestMode){
+			game.setRunningGame(true);
+			return;
+		}
+		
+		//method vars
+		int i;
+		
+		//logger
+		String methodname = "game_main_thread";
+		String classname = "GameManage";
+		CustomLogger.logConfig(classname, methodname, "starting initialization of new game");
+		
+		//MAP INITIALIZATION
+		CustomLogger.logConfig(classname, methodname, "main map initialization");
+		Initializer.initMainMap(game);
+		CustomLogger.logConfig(classname, methodname, "main map initialized");
+		
+		if(isSocketMode){
+			try {
+				//socket mode
+				//SET ALL CLIENTS VIEW (ports 400x..)
+				ManageSocket.setSocketViews(game.getPlayersNumber(), game);
+			} catch (IOException e) {
+				CustomLogger.logEx(classname, methodname, "the main game's thread as incurred into an exception. unable to get clients view (socket)", Level.SEVERE, e);
+				return;
+			}
+		}
+		
+		//WELCOME MSG
+		mainGameViewer.showWelcomeMessage();
+		
+		//SET GAME AS STARTED (for client)
+		game.setRunningGame(true);
+		
+		//ADDING GUI UPDATES MANAGER IN PORTS 500x..
+		//only for socket mode
+		if(isSocketMode){
+			for(int p=0; p<game.getPlayersNumber(); p++){
+				try {
+					int port = 5000 + p + 1;
+					Thread socketGuiUpdaterThread = new Thread(new SocketGuiUpdater(port, game));
+					socketGuiUpdaterThread.start();
+				} catch (Exception e) {
+					CustomLogger.logEx(classname, methodname, "the main game's thread as incurred into an exception. unable to set clients listeners (socket)", Level.SEVERE, e);
+					return;
+				}
+			}
+		}
+		
+		//MAIN WINDOWS-MAP OPENING
+		//(IN EACH CLIENT)
+		CustomLogger.logConfig(classname, methodname, "opening map");
+		
+		//1 Rmi mode | 2 Socket mode
+		//if client return true, the gui was correctly started
+		int mapMode = isSocketMode ? 2 : 1;
+		if(!mainGameViewer.showMap(mapMode, false)){
+			CustomLogger.logConfig(classname, methodname, "the main game's thread was terminated beacuse remote clients GUI were not correctly initialized, please restart the game.");
+			return;
+		}
+		
+		//INITIALIZE PLAYERS
+		CustomLogger.logConfig(classname, methodname, "starting players initialization");
+		
+		//creating a timer
+		AsyncTimer timer = new AsyncTimer();
+		boolean allPlayerInit = false;
+		sync = false;
+		
+		try {
+			//waiting for each player declared time
+			timer.asyncServiceTimeout(PLAYER_INIT_WAIT_TIMEOUT * game.getPlayersNumber(), classname);
+			
+			//SETTING CLIENTS VIEWS
+			if(!isSocketMode){
+				//rmi mode
+				//setting interfaces
+				for(i=0; i<game.getPlayersNumber(); i++){
+					game.getViewerList().get(i).setAssignedToPlayer(i);
+				}
+			}
+			
+			//init players
+			wait:
+			while(!allPlayerInit){
+					
+				//until timeout
+				if(!sync){
+					
+					//DO INIT
+					for(i=0; i<game.getPlayersNumber(); i++){
+						
+						////////////////////////////////////
+						//check for already init
+						try{
+							game.getGamePlayers().get(i).isInitialized();
+							CustomLogger.logConfig(classname, methodname, " the player " + (i+1) + " is already initialized");
+							continue;
+						}catch(Exception e){
+							CustomLogger.logConfig(classname, methodname, " the player " + (i+1) + " is not initialized - cause: " + e);
+						}
+						
+						//////////////////////////////////
+						//if not yet initialized
+						
+						//set current player
+						game.setCurrentPlayerCounter(i);
+						
+						//notify for player id
+						mainGameViewer.showClientWelcome(i+1);
+						
+						//send request for sound execution
+						mainGameViewer.playSoundOnClient("uccelli");
+						
+						//CALL FOR PLAYER INITIALIZATION
+						PlayerInitializer.initPlayer(i, game, false, null);
+						
+						//log
+						CustomLogger.logConfig(classname, methodname, " the player " + (i+1) + " is now initialized");
+						
+						//wait
+						Thread.sleep(PLAYER_INIT_WAIT_RUN);
+						
+						//breaker
+						if(sync){
+							break wait;
+						}
+					}
+					
+					//set init var for future check
+					allPlayerInit = true;
+					
+					try{
+						//check for all initialization
+						for(i=0; i<game.getPlayersNumber(); i++){
+							if(!game.getGamePlayers().get(i).isInitialized()){
+								allPlayerInit = false;
+							}
+						}
+					}catch(Exception e){
+						CustomLogger.logConfig(classname, methodname, "all the player where not initialized - cause: " + e);
+						continue;
+					}
+					
+				}else{
+					//timeout break
+					break;
+				}
+			}
+			
+			//IF ALL WERE INIT
+			if(allPlayerInit){
+				CustomLogger.logConfig(classname, methodname, "All players were initialized. The game can START...");
+				game.setAllPlayersInitialized(true);
+				
+			}else{
+				game.setAllPlayersInitialized(false);
+				CustomLogger.logConfig(classname, methodname, "All players were not initialized. The game cannot start.");
+				
+				throw new InterruptedNamingException("the players were not initialized in time, please restart game.");
+			}
+			
+			///////////////////////////////////////////////////////////////////////////////
+			// STARTING GAME SYNCRONOUS CALLS
+			
+				//LOG
+				CustomLogger.logConfig(classname, methodname, "first turn creation");
+				//FIRST TURN START
+				TurnManage.startGameTurn(game, 0, false);
+
+				////////////////////////////////////
+				//  THE GAME IS RUNNING > HERE <  //
+				////////////////////////////////////
+			//
+			///////////////////////////////////////////////////////////////////////////////
+			
+			//send request for sound execution
+			mainGameViewer.playSoundOnClient("pecora");
+			mainGameViewer.playSoundOnClient("uccelli");
+			
+			//at the end the winner is calculated
+			CustomLogger.logConfig(classname, methodname, "running counters");
+			Counter.showScoreStats(game, false);
+			
+			//GAME HISTORY SAVING IN SERVER
+			CustomLogger.logConfig(classname, methodname, "saving game");
+			//TODO
+			
+			//GAME ENDING
+			CustomLogger.logConfig(classname, methodname, "ending game");
+			game.setRunningGame(false);
+		
+		} catch (InterruptedException e) {
+			CustomLogger.logEx(classname, methodname, "the main game's thread as incurred into an exception", Level.SEVERE, e);
+			
+		} catch (RemoteException e) {
+			CustomLogger.logEx(classname, methodname, "the main game's thread as incurred into an exception", Level.SEVERE, e);
+			
+		} catch (InterruptedNamingException e){
+			CustomLogger.logEx(classname, methodname, "the main game's thread as incurred into an exception", Level.SEVERE, e);
+			Thread.currentThread().interrupt();
+			return;
+			
+		}catch (Exception e){
+			//loggers
+			CustomLogger.logEx(classname, methodname, "the main game's thread as incurred into an exception", Level.SEVERE, e);
+			CustomLogger.logConfig(classname, methodname, "main game was terminated, all history was saved in the history logger. last move was lost.");
+			
+		}finally{
+			
+			//notify all clients
+			mainGameViewer.notifyAllClients("\n**************************************\n\nAN ERROR HAS OCCURRED ON THE SERVER");
+			mainGameViewer.notifyAllClients("\n\nthe game was terminated,\nplease restart server and clients..");
+			
+			//logger
+			CustomLogger.logConfig(classname, methodname, "GAME OVER");
+			
+			//release all
+			game.setRunningGame(false);
+		}
+		
+		/// GAME END
+		//////////////////////////////////////////////////////
+		
+	}
+
+	/**
+	 * REQUEST FOR PLAYER NUMBER
+	 * NO MORE IN USE AFTER SWITCH TO CLIENT/SERVER LOGIC
+	 * LASCIATA SOLO PER USI FUTURI DA CONSOLE (con un solo client)
+	 * @param vw
+	 */
+	public static void setNumberOfPlayers(Game game, ViewerInterface vw, boolean isTest){
+
+	    int playerNumber; 
+	    Database db = new Database();
+
+	    do{
+	    	
+	    	//IS TEST
+	    	if(isTest){
+	    		//override
+	    		playerNumber = 2;
+	    	}else{
+	    		//ask
+	    		playerNumber = vw.askPlayersNumber();
+	    	}
+	    	
+		    if(playerNumber>db.getTotPlayerMaxNumber() || playerNumber<db.getTotPlayerMinNumber()){
+		    	//out of limit case
+		    	vw.notifyInvalidPlayersNumberSelection();
+		    }else{
+		    	//allowed case
+		    	game.setPlayersNumber(playerNumber);
+		    	break;
+		    }
+		    
+	    }while(true);
+	}
+	
+	/**
+	 * METHODS
+	 * @return
+	 */
+	
+	public Game getGameInterface() {
+		return game;
+	}
+	public void setGameInterface(Game newGameInterface) {
+		game = newGameInterface;
+	}
+	
+	/**
+	 * SECONDARY METHODS
+	 */
+	
+	public static void setSync(boolean newsync){
+		sync = newsync;
+	}
+	public static boolean isSync(){
+		return sync;
+	}
+	
+	public static boolean isSocketMode(){
+		return isSocketMode;
+	}
+	
+}

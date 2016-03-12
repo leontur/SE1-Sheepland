@@ -1,0 +1,45 @@
+package game.server.controller;
+
+import java.util.List;
+import java.util.ArrayList;
+
+import game.server.model.Dinar;
+import game.server.model.Enclosure;
+import game.server.model.FinalEnclosure;
+import game.server.model.Game;
+import game.server.model.InitialCard;
+import game.server.model.Player;
+import game.server.model.Position;
+import game.server.model.Shepherd;
+
+import org.junit.Test;
+
+public class MoveShepherdTest {
+
+	/*@Test
+	public void moveShepherdTest() {
+		Game game = new Game();
+		Shepherd shepherd = new Shepherd(1, "Red");
+		List<Dinar> remainingDinars = new ArrayList<Dinar>();
+		remainingDinars.add(new Dinar());
+		InitialCard card = new InitialCard();
+		Player player = new Player("Player 1", null, remainingDinars, card);
+		List<Enclosure> allStandardEnclosures = new ArrayList<Enclosure>();
+		allStandardEnclosures.add(new Enclosure());
+		List<FinalEnclosure> allFinalEnclosures = new ArrayList<FinalEnclosure>();
+		allFinalEnclosures.add(new FinalEnclosure());
+		List<Position> allPositions = new ArrayList<Position>();
+		allPositions.add(new Position());
+		
+		Position prevPos = shepherd.getCurrShepherdTarget();
+		Position nextPos = allPositions.get(targetPos);
+		MoveShepherd.moveShepherd(game, player, shepherd, allStandardEnclosures, allFinalEnclosures, allPositions, null,);
+			
+		MoveShepherd.doMoveShepherd(game, player, shepherd, prevPos, nextPos, null);
+		if(shepherd.getCurrShepherdTarget() == ){
+			assertTrue(true);
+		}
+	}
+		assertTrue(false);
+	}*/
+}

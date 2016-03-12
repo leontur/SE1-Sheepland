@@ -1,0 +1,477 @@
+package game.client.view.gui;
+
+import game.client.rmi.interfaces.ClientConsoleInterface;
+import game.client.view.gui.model.Enclosure;
+import game.client.view.gui.model.FinalEnclosure;
+import game.client.view.gui.model.InitialCard;
+import game.client.view.gui.model.Sheep;
+import game.client.view.gui.model.SheepBlack;
+import game.client.view.gui.model.Sheepland;
+import game.client.view.gui.model.Shepherd;
+import game.client.view.gui.model.StandardCard;
+import game.client.view.gui.model.Wolf;
+
+import java.awt.Image;
+import java.awt.Point;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+
+/**
+ * MOVEMENT AND TURN UPDATE CLASS
+ * SET IN THE MAP 
+ * THE UPDATED POSITION OF ALL OBJECTS
+ * 
+ * @author Leonardo
+ *
+ */
+public class MapUpdate {
+
+	/**
+	 * CLASS VARS
+	 */
+	private static final int animTime1 = 10000;
+	private static final int animTime2 = 15000;
+	private static final int animTime3 = 5000;
+	private static DestinationDatabase ddb = new DestinationDatabase();
+	private static boolean turnCanUpdate = true;
+	private static boolean serverRequestArrived = false;
+	
+	/**
+	 * UPDATE METHODS
+	 */
+	
+	/**
+	 * Check for new positions and move current sheep to the new one
+	 * @param regionBusy
+	 * @param allSheeps
+	 * @param allBlackSheeps
+	 * @param wolf
+	 * @param sheepland
+	 */
+	public static void updateRegions(List<int[]> regionBusy, List<Sheep> allSheeps, List<SheepBlack> allBlackSheeps, Wolf wolf, Sheepland sheepland){
+		
+		//list index: region id
+		//[0] sheep
+		//[1] bsheep
+		//[2] wolf
+		
+		int i, j;
+		int sheepCount=0, bsheepCount=0;
+		
+		//for each region
+		for(i=0; i<regionBusy.size(); i++){
+			
+			//for each sheep
+			for(j=0; j<regionBusy.get(i)[0]; j++, sheepCount++){
+				allSheeps.get(sheepCount).moveTo(new Point(ddb.getRegionsCenterCoords().get(i)[0], ddb.getRegionsCenterCoords().get(i)[1]), animTime1);
+			}
+			
+			//for each black sheep
+			for(j=0; j<regionBusy.get(i)[1]; j++, bsheepCount++){
+				allBlackSheeps.get(bsheepCount).moveTo(new Point(ddb.getRegionsCenterCoords().get(i)[0], ddb.getRegionsCenterCoords().get(i)[1]), animTime1);
+			}
+			
+			//if wolf
+			if(regionBusy.get(i)[2]!=0){
+				wolf.moveTo(new Point(ddb.getRegionsCenterCoords().get(i)[0], ddb.getRegionsCenterCoords().get(i)[1]), animTime1);
+			}
+
+		}
+		
+		//check if wolf ate sheep
+		if(sheepCount<allSheeps.size()){
+			//hide last
+			sheepland.remove(allSheeps.get(allSheeps.size()-1));
+			//remove last
+			allSheeps.remove(allSheeps.size()-1);
+		}
+		
+	}
+	
+	/**
+	 * Check for new positions and move shepherds in new one
+	 * @param playerShepherdPos
+	 * @param allShepherds
+	 * @param sheepland
+	 */
+	public static void updateSheperds(List<List<Integer>> playerShepherdPos, List<Shepherd> allShepherds, Sheepland sheepland){
+		
+		//main list index: player id
+			//inside list: each entry is a new shepherd position 
+			//(cover bough cases of 2 or many players)
+		
+		int i, j;
+		int shepherdCount=0;
+		
+		//for each player
+		for(i=0; i<playerShepherdPos.size(); i++){
+			
+			//for each shepherd
+			for(j=0; j<playerShepherdPos.get(i).size(); j++, shepherdCount++){
+				
+				allShepherds.get(shepherdCount).moveTo(new Point(
+						//x
+						ddb.getPositionsCenterCoords().get(
+								//get updated pos
+								playerShepherdPos.get(i).get(j)
+								)[0], 
+						//y
+						ddb.getPositionsCenterCoords().get(
+								//get updated pos
+								playerShepherdPos.get(i).get(j)
+								)[1]),
+						//time
+						animTime2
+						);
+			}
+		}
+	}
+	
+	/**
+	 * Set new image for counters of dinars
+	 * @param playerDinars
+	 * @param allDinars
+	 * @param sheepland
+	 */
+	public static void updateDinars(int playerDinars, JLabel num1, JLabel num2, List<Image> numbers, Sheepland sheepland){
+		//counters' update
+		//playerDinars = available dinars for this player (client)
+		int decine = playerDinars/10;
+		int unita = playerDinars%10;
+		num1.setIcon(new ImageIcon(numbers.get(decine)));
+		num2.setIcon(new ImageIcon(numbers.get(unita)));
+	}
+	
+	public static void updateInitialCards(int playerInitialCard, List<InitialCard> allInitialCards, Sheepland sheepland){
+		//playerInitialCard = the num(id) of the initial card owned
+		//remove all cards but the owned
+		for(int i=0; i<allInitialCards.size(); i++){
+			if(i!=playerInitialCard){
+				sheepland.remove(allInitialCards.get(i));
+			}
+		}
+	}
+	
+	public static void updateStandardCards(List<List<String>> playerStandardCard, List<StandardCard> allStandardCards, Sheepland sheepland){
+		//playerStandardCard = list of id of owned cards
+		//index  0: card value   1: plot type
+		
+		//remove all cards but owned ones//
+		
+		//hide all cards
+		for(StandardCard sc : allStandardCards){
+			sc.setVisible(false);
+		}
+
+		List<StandardCard> saved = new ArrayList<StandardCard>();
+		
+		//cross check
+		for(StandardCard sc : allStandardCards){
+			
+			for(List<String> rem : playerStandardCard){
+				
+				String localCardValue = Integer.toString(sc.getCardValue());
+				String localCardType = sc.getCardType();
+				
+				String remoteCardValue = rem.get(0);
+				String remoteCardType = rem.get(1);
+				
+				//if match
+				if(remoteCardValue.equals(localCardValue) && remoteCardType.equals(localCardType)){
+					
+					//the card is owned (save from hide)
+					saved.add(sc);
+				}
+			}
+		}
+		
+		//show only owned cards
+		for(StandardCard sc : saved){
+			sc.setVisible(true);
+		}
+	}
+	
+	public static void updateStandardEnclosures(int standardEnclosures, JLabel num3, JLabel num4, List<Image> numbers, Sheepland sheepland){
+		//counters' update
+		//standardEnclosures = available std enclosures for game
+		int decine = standardEnclosures/10;
+		int unita = standardEnclosures%10;
+		num3.setIcon(new ImageIcon(numbers.get(decine)));
+		num4.setIcon(new ImageIcon(numbers.get(unita)));
+	}
+	
+	public static void updateFinalEnclosures(int finalEnclosures, JLabel num5, JLabel num6, List<Image> numbers, Sheepland sheepland){
+		//counters' update
+		//finalEnclosures = available fin enclosures for game
+		int decine = finalEnclosures/10;
+		int unita = finalEnclosures%10;
+		num5.setIcon(new ImageIcon(numbers.get(decine)));
+		num6.setIcon(new ImageIcon(numbers.get(unita)));
+	}
+	
+	public static void updatePositions(List<Integer> positionBusy, List<Enclosure> allEnclosures, List<FinalEnclosure> allFinalEnclosures, Sheepland sheepland){
+		//UPDATE IMAGES ON POSITIONS
+		
+		//positionBusy contains the status of occupation of all positions
+		//index: is the position id
+		//value: 0=free  1:stdencl  2:finencl
+
+		//for each position (remote)
+		search:
+		for(int i=0; i<positionBusy.size(); i++){
+			
+			//if position contains a std enclosure
+			if(positionBusy.get(i) == 1){
+				
+				//search if there is already an enclosure for this pos
+				for(Enclosure en : allEnclosures){
+					if(en.getCoordUse() == i){
+						continue search;
+					}
+				}
+				
+				//search a free enclosure
+				for(Enclosure en : allEnclosures){
+				
+					if(!en.isInUse()){
+						//send this enclosure to pos coords
+						en.moveTo(
+								new Point(
+								ddb.getPositionsCenterCoords().get(i)[0]+15,
+								ddb.getPositionsCenterCoords().get(i)[1]+15
+								), animTime3);
+					
+						//set as in use
+						en.setIsInUse(true);
+						en.setCoordUse(i);
+						
+						//go to next pos check
+						break;
+					}
+				}
+				
+			}else if(positionBusy.get(i) == 2){
+				
+				//search if there is already an enclosure for this pos
+				for(FinalEnclosure en : allFinalEnclosures){
+					if(en.getCoordUse() == i){
+						continue search;
+					}
+				}
+				
+				//search a free enclosure
+				for(FinalEnclosure en : allFinalEnclosures){
+				
+					if(!en.isInUse()){
+						//send this enclosure to pos coords
+						en.moveTo(
+								new Point(
+								ddb.getPositionsCenterCoords().get(i)[0]+15,
+								ddb.getPositionsCenterCoords().get(i)[1]+15
+								), animTime3);
+					
+						//set as in use
+						en.setIsInUse(true);
+						en.setCoordUse(i);
+						
+						//go to next pos check
+						break;
+					}
+				}
+			}
+		}
+	}
+	
+	public static void updatePlayerNumber(int newnum, JLabel numPlayer, List<Image> numbers){
+		//update counter
+		//finalEnclosures = available fin enclosures for game
+		numPlayer.setIcon(new ImageIcon(numbers.get(newnum)));
+	}
+	
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	public static void updateCurrPlayerNum(int playerNumber, int currPlayerNum, JLabel moveDo, JLabel moveWait){
+		//show different banner for the current player move or wait
+		if((playerNumber-1) == currPlayerNum){
+			moveDo.setVisible(true);
+			moveWait.setVisible(false);
+		}else{
+			moveDo.setVisible(false);
+			moveWait.setVisible(true);
+		}
+	}
+	
+	
+	public static void updateTurnLogic(
+			final int playerNumber, 
+			final int currPlayerNum, 
+			final JLabel dice, 
+			final JLabel numDice, 
+			final int diceNum, 
+			final JLabel gif7,
+			final JLabel notify,
+			final Image notifyImg,
+			final List<Image> numbers, 
+			final Sheepland sheepland,
+			final ClientConsoleInterface cci
+			){
+		
+		//dice is the animated gif
+		//numDice is the counter
+		//diceNum is the rnd num from server
+		
+System.out.println(" NEW TURN LOGIC UPDATE REQUEST . turn can update = " + turnCanUpdate);	
+
+//////////////////////////
+//TODO METTERE IN CLASSE  O METODO SEPARATO DAL WHILE IN POI, UNA VOLTA CHE ARRIVA UN CMD DA SERVER, VIENE SUBITO INVOCATO (SENZA BISOGNO DEL WHILE!)
+
+////////////////////////
+//SUONI!!!
+
+		//RUNNABLE IN NEW THREAD
+		if(turnCanUpdate){
+
+			//check if is the turn of this client
+			if((playerNumber-1) != currPlayerNum){
+				return;
+			}
+			
+	        Runnable task = new Runnable() {
+	            public void run() {
+	                try {
+	                	//lock
+	                	turnCanUpdate = false;
+	                	
+	                	//wait
+	                	Thread.sleep(100);
+	                	
+	                	//show dice num and gif
+	                	gif7.setVisible(false);
+	                	dice.setVisible(true);
+	                	//update counter
+	                	numDice.setIcon(new ImageIcon(numbers.get(diceNum)));
+	                	
+	                	try{
+	                		
+	                		//try to
+		                	//recognize move type
+		                	
+	                		//wait a new request from server
+		                	while(!serverRequestArrived);
+		                	
+		                	//wait
+		                	Thread.sleep(100);
+		                	
+		                	//get the request arrived from server
+		                	String command = sheepland.getLastServerCommand();
+		                	String options = sheepland.getLastServerCmdOptions();
+		                	int intIn = 0;
+		                	
+		                	//CASES (GUI COMMANDS)
+		                	//Note: used from MapUpdate in game.server.view
+		                	//if change here, change even that
+		                	String[] guiCmdList = new String[]{
+		                			"#player-name#",		//0
+		                			"#new-shepherd-pos#",	//1
+		                			"#shepherd-selection#",	//2
+		                			"#move-type#",			//3
+		                			"#move-target#",		//4
+		                			"#sheep-to-move#",		//5
+		                			"#b-sheep-to-move#",	//6
+		                			"#game-status#",		//7
+		                			"#show-notify#"			//8
+		                	};
+		                		
+		                	//SWITCH CASES
+		                	if(command.equals(guiCmdList[0])){
+		                		//send a casual number
+		                		intIn = new Random().nextInt();
+		                	}else if(command.equals(guiCmdList[1])){
+		                		//send the clicked pos id
+		                		
+		                	}else if(command.equals(guiCmdList[2])){
+		                		//send the clicked shepherd id
+		                		
+		                	}else if(command.equals(guiCmdList[3])){
+		                		//send the clicked type of move id
+		                		
+		                	}else if(command.equals(guiCmdList[4])){
+		                		//send the clicked pos id (as 1!)
+		                		
+		                	}else if(command.equals(guiCmdList[5])){
+		                		//show the arrow
+		                		//TODO
+		                		//TODO
+		                		//if ok, send 1
+		                		
+		                		//if not ok, send 0
+		                		
+		                	}else if(command.equals(guiCmdList[6])){
+		                		//fare prima bianca e copiare
+		                		
+		                	}else if(command.equals(guiCmdList[7])){
+		                		//send 0 = NO
+		                		intIn = 0;
+		                	}else if(command.equals(guiCmdList[8])){
+		                		//print txt on notify
+		                		notify.setIcon(new ImageIcon(notifyImg));
+		                		notify.setText(options);
+		                		notify.setVerticalTextPosition(40);
+		                		notify.setHorizontalTextPosition(80);
+		                		notify.revalidate();
+		                		//show notify
+		                		notify.setVisible(true);
+		                		//wait
+		                		Thread.sleep(2500);
+		                		//hide notify
+		                		notify.setVisible(false);
+		                	}
+		                			                
+System.out.println(" NEW CONSOLE OVERRIDE STARTED");
+		                	//send move request to server
+		                	cci.overrideConsoleInput(intIn);
+		                	
+		                	//set false waiting var
+		                	serverRequestArrived = false;
+		                	
+	                	}catch(Exception e){
+	                		//do nothing, the server was not ready for a move
+	                		e.printStackTrace();
+	                	}
+	                	
+	                	//wait
+	                	Thread.sleep(1000);
+	                	
+	                	//hide dice
+	                	dice.setVisible(false);
+	                	gif7.setVisible(true);
+	                	
+	                	//unlock
+	                	turnCanUpdate = true;
+	                	
+	                } catch (Exception e) {
+	                    //handle error which cannot be thrown back
+	                }
+	            }
+	        };
+	        //run task in new thread
+	        Thread counter = new Thread(task);
+	        counter.start();
+		}
+	}
+	
+	/**
+	 * SETTER
+	 * for start request check and move input manage
+	 */
+	public static void setTrueServerRequestArrived(){
+		serverRequestArrived = true;
+	}
+	
+}

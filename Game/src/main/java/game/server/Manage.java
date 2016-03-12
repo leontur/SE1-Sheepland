@@ -1,0 +1,104 @@
+package game.server;
+
+import java.rmi.server.ExportException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+import game.server.controller.CustomLogger;
+import game.server.rmi.StartRmi;
+import game.server.socket.StartSocket;
+
+/**
+ * 
+ * COMMUNICATION METHOD SELECTION
+ * BY USER TO CONNECT TO CLIENT
+ * 
+ * 	-THEN STARTS THE CORRECT CLASS
+ * 
+ * @author Leonardo
+ *
+ */
+public class Manage {	
+	
+	/**
+	 * MAIN SERVER LIST OF ALL STARTED GAMES
+	 * CONTAINS BOTH SERVER AND RMI MODES
+	 */
+	private static List<Object> runningGames = new ArrayList<Object>();
+		
+	/**
+	 * DEFAULT CONSTRUCTOR
+	 * private for static classes
+	 */
+	private Manage(){
+		
+	}
+	
+	/**
+	 * FIRST METHOD STARTED ON SERVER
+	 * Manage the creation of a new game in rmi or socket mode
+	 * @param args
+	 * @throws Exception
+	 */
+	public static void main(String[] args) throws Exception{
+		
+		int commMode = 0;
+		String msg = "# Main server thread connection error, it is possible that the port was unavailable #";
+		String classname = "Manage";
+		String methodname = "main";
+		
+		//ask to user the communication method to use
+		System.out.println(">THIS IS THE SHEEPLAND SERVER - WELCOME<");
+		System.out.println(">SELECT THE CLIENT-SERVER CONNECTION MODE:");
+		System.out.println(" 1: rmi | 2: socket");
+		@SuppressWarnings("resource")
+		int in = new Scanner(System.in).nextInt();
+		commMode = in==1 || in==2 ? in : 0;
+		
+		if(commMode==1){
+			
+			//START CONNECTION AS **RMI**
+			StartRmi startRmi = new StartRmi();
+			
+			try{
+				
+				//try to open connection
+				startRmi.runServerRmi();
+				
+				//saving to games list
+				runningGames.add(startRmi);
+				
+			}catch(ExportException e){
+				//connection error
+				CustomLogger.logInfoEx(classname, methodname, msg, e);
+				System.err.println(msg);
+			}
+			
+		}else if(commMode==2){
+			
+			//START CONNECTION AS **SOCKET**
+			StartSocket startSocket = new StartSocket();
+			
+			try{
+				
+				//try to open connection
+				startSocket.runServerSocket();
+				
+				//saving to games list
+				runningGames.add(startSocket);
+				
+			}catch(ExportException e){
+				//connection error
+				CustomLogger.logInfoEx(classname, methodname, msg, e);
+				System.err.println(msg);
+			}
+			
+		}else{
+			//INPUT MISMATCH
+			//NO CONNECTION OR GAME HAS TO START
+			Thread.currentThread().interrupt();
+		}
+	}
+
+}

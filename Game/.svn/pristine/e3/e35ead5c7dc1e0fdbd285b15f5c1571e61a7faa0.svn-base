@@ -1,0 +1,183 @@
+package game.server.model;
+
+import static org.junit.Assert.*;
+
+import org.junit.Test;
+
+/**
+ * MAIN DATABASE-TEST CLASS
+ * 
+ * @author Dario
+ *
+ */
+
+public class DatabaseTest {
+	
+	//CLASS VARS
+	private Database db = new Database();
+	
+	@Test 
+	public void getInitialPlotCardNumTest(){
+		assertNotNull(db.getInitialPlotCardNum());
+	}
+	
+	@Test
+	public void getStandardPlotCardNumTest(){
+		assertNotNull(db.getStandardPlotCardsNum());
+	}
+	
+	@Test
+	public void getPlotTypesNumTest(){
+		assertNotNull(db.getPlotTypesNum());
+	}
+
+	@Test
+	public void getTotPlotCardsNumTest(){
+		assertNotNull(db.getTotPlotCardsNum());
+	}
+	
+	@Test
+	public void getRegionPerPlotNumTest(){
+		assertNotNull(db.getRegionPerPlotNum());
+	}
+	
+	@Test
+	public void getIslandNumTest(){
+		assertNotNull(db.getIslandNum());
+	}
+	
+	@Test
+	public void getRegionNumTest(){
+		assertNotNull(db.getRegionNum());
+	}
+	
+	@Test
+	public void getCityRegionNumTest(){
+		assertNotNull(db.getCityRegionNum());
+	}
+	
+	@Test
+	public void getEnclosureNumTest(){
+		assertNotNull(db.getEnclosureNum());
+	}
+	
+	@Test
+	public void getFinalEnclosureNumTest(){
+		assertNotNull(db.getFinalEnclosureNum());
+	}
+	
+	@Test
+	public void getPositionNumTest(){
+		assertNotNull(db.getPositionNum());
+	}
+	
+	@Test
+	public void getSheepNumTest(){
+		assertNotNull(db.getSheepNum());
+	}
+	
+	@Test
+	public void getSheepBNumTest(){
+		assertNotNull(db.getSheepBNum());
+	}
+	
+	@Test
+	public void getSheepValueTest(){
+		assertNotNull(db.getSheepValue());
+	}
+	
+	@Test
+	public void getSheepBValuetest(){
+		assertNotNull(db.getSheepBValue());
+	}
+	
+	@Test
+	public void getDinarsTotNumtest(){
+		assertNotNull(db.getDinarsTotNum());
+	}
+	
+	@Test
+	public void getDinarAssignNumTest(){
+		assertNotNull(db.getDinarAssignNum());
+	}
+	
+	@Test
+	public void getDinarAssignVariantNumTest(){
+		assertNotNull(db.getDinarAssignVariantNum());
+	}
+	
+	@Test
+	public void getDiceNumTest(){
+		assertNotNull(db.getDiceNum());
+	}
+	
+	@Test
+	public void getTotShepherdNumTest(){
+		assertNotNull(db.getTotShepherdNum());
+	}
+	
+	@Test
+	public void getTotPlayerMinNumberTest(){
+		assertNotNull(db.getTotPlayerMinNumber());
+	}
+	
+	@Test
+	public void getTotPlayerMaxNumberTest(){
+		assertNotNull(db.getTotPlayerMaxNumber());
+	}
+	
+	@Test
+	public void getTotShepherdrVariantNumberTest(){
+		assertNotNull(db.getTotShepherdVariantNumber());
+	}
+	
+	@Test
+	public void getMaxMovementCountTest(){
+		assertNotNull(db.getMaxMovementCount());
+	}
+	
+	@Test
+	public void getShepherdMovementDinarsCostTest(){
+		assertNotNull(db.getShepherdMovementDinarsCost());
+	}
+	
+	@Test
+	public void getPlotCardsValueMultiplierTest(){
+		assertNotNull(db.getPlotCardsValueMultiplier());
+	}
+	
+	@Test
+	public void getShepherdColorTest(){
+		assertNotNull(db.getShepherdColor());
+	}
+	
+	@Test
+	public void getPlotTypesTest(){
+		assertNotNull(db.getPlotTypes());
+	}
+
+	@Test
+	public void getCityTypesTest(){
+		assertNotNull(db.getCityTypes());
+	}
+	
+	@Test
+	public void getPositionViewerValueTest(){
+		assertNotNull(db.getPositionViewerValue());
+	}
+	
+	@Test
+	public void getPositionsPerRegionTest(){
+		assertNotNull(db.getPositionsPerRegion());
+	}
+	
+	@Test
+	public void getPositionPerCityTest(){
+		assertNotNull(db.getPositionsPerRegion());
+	}
+	
+	@Test
+	public void getPositionAdjacentsMatrixTest(){
+		assertNotNull(db.getPositionsAdjacentsMatrix());
+	}
+}

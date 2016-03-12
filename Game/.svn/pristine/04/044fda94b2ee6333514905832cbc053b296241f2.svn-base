@@ -1,0 +1,92 @@
+package game.server.controller;
+	
+import static org.junit.Assert.*;
+
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
+	
+import game.server.model.Dice;
+import game.server.model.Game;
+import game.server.model.Position;
+import game.server.model.Region;
+import game.server.model.Sheep;
+import game.server.model.SheepBlack;
+	
+import game.server.view.Console;
+import game.server.view.ViewerInterface;
+
+import org.junit.Test;
+
+/**
+ * MOVE MANAGEMENT-TEST CLASS
+ * For BlackSheeps auto and manual move
+ * @author Dario
+ *
+ */
+	public class MoveBlackSheepTest {
+		
+		public MoveBlackSheep tester;
+	
+		/**
+		 * Control black sheep auto jump method
+		 * @throws RemoteException
+		 */
+	@Test
+	public void moveBlackSheepAutoJumpTest(){
+		
+		Game game = new Game();
+		
+		ViewerInterface mainGameViewer = new Console(game);
+		
+		Dice dice = new Dice();
+		int rndum = dice.getNewRandomNum();
+		
+		Position pos = new Position(4, 0);
+		pos.addAdjPosAroundThis(new Position(7, 0));
+		
+		SheepBlack bsheep = new SheepBlack(1, null);
+		
+		List<Region> allRegions = new ArrayList<Region>();
+		allRegions.add(new Region());
+		
+		MoveBlackSheep.moveBlackSheepAutoJump(game, bsheep, allRegions, dice, mainGameViewer);
+		
+		List<Position> tmpPos = bsheep.getTarget().getBorders();
+		for(int i=0; i<tmpPos.size(); i++){
+		
+			if(rndum == tmpPos.get(i).getPosViewVal()){
+			
+				assertTrue(true);
+				}
+			}
+		assertTrue(false);
+		}
+	
+	/**
+	 * Control methods for manual sheep movement
+	 * @throws RemoteException
+	 */
+	 @Test
+	 public void moveBlackSheepBetweenRegions(){
+		 
+		Game game = new Game();
+		
+		ViewerInterface mainGameViewer = new Console(game);
+		 
+		Region prevBSheepReg = new Region(0, new Sheep(), "Hill");
+		Region nextBSheepReg = new Region(1, new Sheep(), "Forest");
+		
+		MoveBlackSheep.moveBlackSheepBetweenRegions(game, prevBSheepReg, nextBSheepReg, mainGameViewer,true);
+		
+		boolean thisCombination = mainGameViewer.askForBSheepToMove(prevBSheepReg.getRegionIdentifier()+1, nextBSheepReg.getRegionIdentifier()+1);
+		
+		if(thisCombination){
+			
+			assertTrue(true);
+		}
+		assertTrue(false); 
+	}
+	
+	
+}

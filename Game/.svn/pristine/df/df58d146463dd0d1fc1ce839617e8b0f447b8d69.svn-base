@@ -1,0 +1,213 @@
+package game.client.view.gui;
+
+import game.client.rmi.interfaces.ClientConsoleInterface;
+import game.client.view.gui.model.Sheepland;
+
+import java.awt.Image;
+import java.util.List;
+import java.util.Random;
+
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+
+
+/**
+ * TURN UPDATE CLASS
+ * 
+ * SET NOTIFY IN THE MAP, REQUEST TO USER, 
+ * AND SEND RESPONSE TO SERVER
+ * 
+ * CALLED AS NEW THREAD
+ * 
+ * @author Leonardo
+ *
+ */
+public class TurnUpdate implements Runnable {
+
+	/**
+	 * CLASS VARS
+	 */
+	private int playerNumber;
+	private int currPlayerNum;
+	private JLabel dice;
+	private JLabel numDice;
+	private int diceNum;
+	private JLabel gif7;
+	private JLabel notify;
+	private Image notifyImg;
+	private List<Image> numbers;
+	private Sheepland sheepland;
+	private ClientConsoleInterface cci;
+	
+	/**
+	 * CLASS CONSRTUCTOR
+	 * receive vars for the run execution
+	 */
+	public TurnUpdate(
+			int playerNumber, 
+			int currPlayerNum, 
+			JLabel dice, 
+			JLabel numDice, 
+			int diceNum, 
+			JLabel gif7,
+			JLabel notify,
+			Image notifyImg,
+			List<Image> numbers, 
+			Sheepland sheepland,
+			ClientConsoleInterface cci
+			){
+		
+		this.playerNumber = playerNumber;
+		this.currPlayerNum = currPlayerNum;
+		this.dice = dice;
+		this.numDice = numDice;
+		this.diceNum = diceNum;
+		this.gif7 = gif7;
+		this.notify = notify;
+		this.notifyImg = notifyImg;
+		this.numbers = numbers;
+		this.sheepland = sheepland;
+		this.cci = cci;
+		
+	}
+	
+	/**
+	 * REQUESTED FROM SERVER
+	 * (CALLED FROM SHEEPLAND GUI)
+	 * 
+	 * check and manage the command arrived, and send an appropriate response.
+	 * 
+	 * @param playerNumber
+	 * @param currPlayerNum
+	 * @param dice
+	 * @param numDice
+	 * @param diceNum
+	 * @param gif7
+	 * @param notify
+	 * @param notifyImg
+	 * @param numbers
+	 * @param sheepland
+	 * @param cci
+	 */
+	public void run() {
+		
+		//COMMAND CHECK
+    	//try to recognize move type
+		
+		//dice is the animated gif
+		//numDice is the counter
+		//diceNum is the rnd num from server
+		
+		//check if is the turn of this client
+		if((playerNumber-1) != currPlayerNum){
+			return;
+		}
+		
+		try{
+			        	
+        	//wait
+        	Thread.sleep(100);
+        	
+        	//get the request arrived from server
+        	String command = sheepland.getLastServerCommand();
+        	String options = sheepland.getLastServerCmdOptions();
+        	int intIn = 0;
+        	
+        	//CASES (GUI COMMANDS)
+        	//Note: used from MapUpdate in game.server.view
+        	//if change here, change even that
+        	String[] guiCmdList = new String[]{
+        			"#player-name#",		//0
+        			"#new-shepherd-pos#",	//1
+        			"#shepherd-selection#",	//2
+        			"#move-type#",			//3
+        			"#move-target#",		//4
+        			"#sheep-to-move#",		//5
+        			"#b-sheep-to-move#",	//6
+        			"#game-status#",		//7
+        			"#show-notify#",		//8
+        			"#new-dice#"			//9
+        	};
+        		
+        	//SWITCH CASES
+        	if(command.equals(guiCmdList[0])){
+        		//send a casual number
+        		intIn = new Random().nextInt();
+        		
+        	}else if(command.equals(guiCmdList[1])){
+        		//send the clicked pos id
+        		
+        		
+        	}else if(command.equals(guiCmdList[2])){
+        		//send the clicked shepherd id
+        		
+        		
+        	}else if(command.equals(guiCmdList[3])){
+        		//send the clicked type of move id
+        		
+        		
+        	}else if(command.equals(guiCmdList[4])){
+        		//send the clicked pos id (as 1!)
+        		
+        		
+        	}else if(command.equals(guiCmdList[5])){
+        		//show the arrow
+        		//TODO
+        		//TODO
+        		//if ok, send 1
+        		
+        		//if not ok, send 0
+        		
+        		
+        	}else if(command.equals(guiCmdList[6])){
+        		//fare prima bianca e copiare
+        		
+        		
+        	}else if(command.equals(guiCmdList[7])){
+        		//send 0 = NO
+        		intIn = 0;
+        		
+        	}else if(command.equals(guiCmdList[8])){
+        		//print txt on notify
+        		notify.setIcon(new ImageIcon(notifyImg));
+        		notify.setText(options);
+        		notify.setVerticalTextPosition(40);
+        		notify.setHorizontalTextPosition(80);
+        		notify.revalidate();
+        		//show notify
+        		notify.setVisible(true);
+        		//wait
+        		Thread.sleep(3500);
+        		//hide notify
+        		notify.setVisible(false);
+        		
+        	}else if(command.equals(guiCmdList[9])){
+            	//show dice num and gif
+            	gif7.setVisible(false);
+            	dice.setVisible(true);
+            	//update counter
+            	numDice.setIcon(new ImageIcon(numbers.get(diceNum)));
+            	//wait
+            	Thread.sleep(3500);
+            	//hide dice
+            	dice.setVisible(false);
+            	gif7.setVisible(true);
+        	}
+        			 
+//TODO
+        	System.out.println(" NEW CONSOLE OVERRIDE STARTED");
+
+        	//send move request to server
+        	cci.overrideConsoleInput(intIn);
+        	
+        	//wait
+        	Thread.sleep(100);
+        	
+    	}catch(Exception e){
+    		//do nothing, the server was not ready for a move
+    		e.printStackTrace();
+    	}
+		
+	}
+
+}

@@ -1,0 +1,172 @@
+package game.server.controller;
+
+import game.server.model.Game;
+import game.server.view.ViewerInterface;
+
+import java.rmi.RemoteException;
+
+/**
+ * MAIN TURN MANAGEMENT
+ * CONTROLLER: FOR TURN AND MOVE (PLAY)
+ * 
+ * @author Leonardo
+ *
+ */
+public class TurnManage {
+	
+	/**
+	 * timeout var
+	 */
+	private static boolean sync;
+	
+	/**
+	 * timeout for the single turn
+	 */
+	private static final int TURN_TIMEOUT = 120000; 
+	
+	/**
+	 * waiting time between turns
+	 */
+	private static final int TURN_LOOKUP = 1000; 
+	
+	/**
+	 * DEFAULT CONSTRUCTOR
+	 * private for static classes
+	 */
+	private TurnManage(){
+		
+	}
+	
+	/**
+	 * TURN LOGIC
+	 * 
+	 * Start and mantain all turns of the current game
+	 * @throws RemoteException 
+	 * @throws InterruptedException 
+	 */
+	public static void startGameTurn(Game game, int testMove, boolean isTest) throws Exception{
+		
+		//get total number of players
+		int playersNumber = game.getPlayersNumber();
+		
+		ViewerInterface mgv = game.getGameViewer();
+		
+		//allocate the async timer class (ASYNC RUN)
+		AsyncTimer timer = new AsyncTimer();
+		
+		/**
+		 * game while (until the final turn)
+		 */
+		do{
+			//timeout var
+			sync = false;
+			
+			//async run
+			timer.asyncServiceTimeout(TURN_TIMEOUT, "TurnManage");
+			
+			int currPlayerCounter = game.getCurrentPlayerCounter();
+			
+			//single turn for
+			for(currPlayerCounter=0; currPlayerCounter<playersNumber; currPlayerCounter++){
+				
+				//TEST CLAUSE
+				if( !isTest
+					&&
+					//check if client is alive (if true skip)
+					!mgv.isClientAlive(currPlayerCounter)
+					){
+					
+					//in case of false (exception), the remote interface is no more available due to a client disconnection
+					//jump to next player
+					mgv.notifyAllClients("\n# the player " + (currPlayerCounter+1) + " is no more connected, the game keep on without him");
+					mgv.printToConsole("the player " + (currPlayerCounter+1) + " is no more connected, the game keep on without him");
+					continue;
+				}
+					
+				//set current player in game
+				game.setCurrentPlayerCounter(currPlayerCounter);
+				
+				//next player notify
+				game.getGameViewer().clearConsole(false);
+				mgv.printToConsole("\nnext player is -> " + (currPlayerCounter+1));
+				mgv.notifyAllClients("\nnext player is -> " + (currPlayerCounter+1));
+				
+				//send notify
+				mgv.notifyNewTurn();
+				
+				//send request for sound execution
+				mgv.playSoundOnClient("uccellicorto");
+				mgv.playSoundOnClient("turno");
+				
+				//enablig turn
+				sync = false;
+				
+				//move time (timeout breaker)
+				while(!sync){
+					
+					//notify
+					mgv.printToConsole("new turn started");
+					
+					//TURN VARS
+					//turn counters reset (for new turn)
+					game.clearMoves();
+
+					//TEST CLAUSE
+					if(isTest){
+						break;
+					}
+					
+					//NEW TURN TO NEXT PLAYER
+					TurnExecutor.playersTurn(currPlayerCounter, game, mgv, testMove, isTest);
+
+					//waiting before next turn
+					Thread.sleep(TURN_LOOKUP);
+					
+					//notify
+					mgv.printToConsole("New turn available");
+					
+				}
+				//end while
+				
+				//TEST CLAUSE
+				if(isTest){
+					break;
+				}
+				
+				//send request for sound execution
+				mgv.playSoundOnClient("uccelli");
+			}
+			//end for
+			//end player turn -> next player
+			
+			//TEST CLAUSE
+			if(isTest){
+				break;
+			}
+			
+		}while(
+				(game.getRemainingStandardEnclosuresNum()>0 || game.getRemainingFinalEnclosuresNum()>0)
+				&&
+				!game.isFinalTurn()
+				);
+	}
+	
+	//SECONDARY METHODS
+	
+	/**
+	 * Set sync
+	 * @param newsync
+	 */
+	public static void setSync(boolean newsync){
+		sync = newsync;
+	}
+	/**
+	 * True if the turn is sync
+	 * false otherwise
+	 * @return
+	 */
+	public static boolean isSync(){
+		return sync;
+	}
+	
+}

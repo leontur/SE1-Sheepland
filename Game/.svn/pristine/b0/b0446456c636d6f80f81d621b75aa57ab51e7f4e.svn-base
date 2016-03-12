@@ -1,0 +1,63 @@
+package game.server.rmi.interfaces;
+
+import game.server.model.Game;
+
+import java.rmi.NotBoundException;
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+import java.util.List;
+
+public interface AddPlayerInterface extends Remote {
+	
+	///////////////////////////////////////////////////////////////////
+	
+	//CLIENT SET
+
+	int getCurrentPlayerNumbers() throws RemoteException;
+	
+	void addNewPlayer() throws RemoteException, NotBoundException, InterruptedException;
+	
+	void setClientView() throws RemoteException, NotBoundException, InterruptedException;
+
+	boolean isRunningGame() throws RemoteException;
+	
+	public int getThisGamePlayersNumber() throws RemoteException;
+	
+	public void setThisGamePlayersNumber(int newnum) throws RemoteException;
+	
+	public int getNewPlayerId() throws RemoteException;
+	
+	void setGameInterface(Game game) throws RemoteException;
+	
+	////////////////////////////////////////////////////////////////////
+	
+	//GUI MANAGE
+	
+	List<int[]> getGuiRegionBusy() throws RemoteException;
+	
+	List<List<Integer>> getGuiPlayersShepherdLoc() throws RemoteException;
+	
+	
+	
+List<Integer> getGuiShepherdLoc() throws RemoteException;
+	
+	int[] getGuiStandardEnclosures() throws RemoteException;
+	
+	int[] getGuiFinalEnclosures() throws RemoteException;
+	
+	int[] getGuiInitialCards() throws RemoteException;
+	
+	int[] getGuiStandardCards() throws RemoteException;
+	
+	int getGuiDiceNum() throws RemoteException;
+	
+	
+	void setGuiSheepNewLoc() throws RemoteException;
+	
+	void setGuiBSheepNewLoc() throws RemoteException;
+	
+	void setGuiShepherdNewLoc() throws RemoteException;
+	
+	void setGuiStandardCardBuy() throws RemoteException;
+	
+}

@@ -1,0 +1,156 @@
+package game.server.controller;
+
+import game.server.interfaces.DatabaseInterface;
+import game.server.model.Database;
+import game.server.model.Game;
+import game.server.model.Position;
+import game.server.model.Region;
+import game.server.view.ViewerInterface;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * MAIN MOVE CHECK CLASS
+ * 
+ * @author Leonardo
+ *
+ */
+public class CheckMove {
+
+	//DB IMPORT
+	private static DatabaseInterface db = new Database();
+	
+	/**
+	 * DEFAULT CONSTRUCTOR
+	 * private for static classes
+	 */
+	private CheckMove(){
+		
+	}
+	
+	/**
+	 * Check if the sequence done of move is correct and 
+	 *  -return true if can move only shepherd
+	 *  -return false if can move everything
+	 */
+	public static boolean moveSequenceCheck(Game game, int selectedMove){
+		return presetMoveSequence1(game, selectedMove) || presetMoveSequence2(game, selectedMove) ? true : false;
+	}
+	//Move check engine sequences
+	private static boolean presetMoveSequence1(Game game, int selectedMove){
+		return selectedMove == (db.getMaxMovementCount()-1) && game.isSheepBeenMoved() && !game.isShepherdBeenMoved();
+	}
+	private static boolean presetMoveSequence2(Game game, int selectedMove){
+		return selectedMove == db.getMaxMovementCount() && game.isCardBeenBought() && !game.isShepherdBeenMoved();
+	}
+	
+	/**
+	 * Check if position is free or occupied
+	 * @return
+	 */
+	public static boolean isPositionBusy(Position pos) {
+		return pos.isObjOverPos();
+	}
+
+	/**
+	 * Check if two position are adjacents
+	 * @return
+	 */
+	public static boolean isPositionAdjacent(Position pos1, Position pos2) {
+		return (pos1.getAllAdjPosAroundThis().contains(pos2) || pos2.getAllAdjPosAroundThis().contains(pos1)) ? true : false;
+	}
+
+	/**
+	 * Search two regions with a common position between
+	 * @return
+	 */
+	public static List<Region> findRegionsWithSamePos(List<Region> allRegions, Position pos) {
+		int i, j;
+		List<Region> findedRegions = new ArrayList<Region>();
+		
+		//for each region (1)
+		for(i=0; i<allRegions.size(); i++){
+			//get list of adj pos (1)
+			List<Position> adjpos1 = allRegions.get(i).getBorders();
+			
+			//for each region (2)
+			for(j=0; j<allRegions.size(); j++){	
+				
+				//if different regions
+				if(i!=j){
+					//get list of adj pos (2)
+					List<Position> adjpos2 = allRegions.get(j).getBorders();
+					
+					//if match (scroll positions)
+					if(scrollPositions(adjpos1, adjpos2, pos)){
+						findedRegions.add(allRegions.get(i));
+						findedRegions.add(allRegions.get(j));
+						return findedRegions;
+					}
+				}
+			}
+		}
+		//return empty list
+		return findedRegions;
+	}
+	
+	//scrolling engine for findRegionsWithSamePos()
+	private static boolean scrollPositions(List<Position> adjpos1, List<Position> adjpos2, Position pos){
+		int k, l;
+		//scrolling pos list (1)
+		for(k=0; k<adjpos1.size(); k++){
+			//scrolling pos list (2)
+			for(l=0; l<adjpos2.size(); l++){
+				//if pos match
+				if(adjpos1.get(k) == pos && adjpos2.get(l) == pos){
+					//match found
+					return true;
+				}
+			}
+		}
+		//no match found
+		return false;
+	}
+
+	/**
+	 * Search another region with the same position
+	 * @return
+	 */
+	public static Region findSecondRegionWithSamePos(List<Region> allRegions, Position pos, int firstRegionIdentifier, ViewerInterface mainGameViewer) {
+		//calling upper method tho have a list of regions with common pos
+		List<Region> findedRegions = findRegionsWithSamePos(allRegions, pos);
+		
+		//searching if another region is adjacent and with different id
+		for(int i=0; i<findedRegions.size(); i++){
+			if(findedRegions.get(i).getRegionIdentifier() != firstRegionIdentifier){
+				return findedRegions.get(i);
+			}
+		}
+		
+		mainGameViewer.notifyNoAdjPosition();
+		return null;
+	}
+	
+	/**
+	 * Search in regions passed as list and return true if there is at least one sheep in one of them
+	 */
+	public static boolean isAtLeastASheepInRegionsAround(List<Region> regions){
+		
+		int total=0;
+		
+		for(int i=0; i<regions.size(); i++){
+			
+			if(regions.get(i).getAllSheeps().size() > 0){
+				total++;
+			}
+			if(regions.get(i).getAllBlackSheeps().size() > 0){
+				total++;
+			}
+		}
+		
+		return total > 0 ? true : false;
+		
+	}
+	
+}

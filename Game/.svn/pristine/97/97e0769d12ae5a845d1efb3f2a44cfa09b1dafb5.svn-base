@@ -1,0 +1,271 @@
+package game.client.view.gui;
+
+import game.client.view.ClientLogger;
+import game.client.view.gui.model.Sheepland;
+
+import java.awt.Image;
+import java.util.List;
+
+import javax.swing.ImageIcon;
+import javax.swing.JLabel;
+import javax.swing.SwingConstants;
+
+
+/**
+ * TURN UPDATE CLASS
+ * 
+ * SET NOTIFY IN THE MAP, REQUEST TO USER, 
+ * AND SEND RESPONSE TO SERVER
+ * 
+ * CALLED AS NEW THREAD
+ * 
+ * @author Leonardo
+ *
+ */
+public class TurnUpdate implements Runnable {
+
+	/**
+	 * CLASS VARS
+	 */
+	private JLabel dice;
+	private JLabel numDice;
+	private int diceNum;
+	private JLabel gif7;
+	private JLabel notify;
+	private List<Image> numbers;
+	private Sheepland sheepland;
+	private String command;
+	private String options;
+	
+	/**
+	 * CLASS CONSRTUCTOR
+	 * receive vars for the run execution
+	 */
+	public TurnUpdate(
+			JLabel dice, 
+			JLabel numDice, 
+			int diceNum, 
+			JLabel gif7,
+			JLabel notify,
+			List<Image> numbers, 
+			Sheepland sheepland,
+			String command,
+			String options
+			){
+		
+		this.dice = dice;
+		this.numDice = numDice;
+		this.diceNum = diceNum;
+		this.gif7 = gif7;
+		this.notify = notify;
+		this.numbers = numbers;
+		this.sheepland = sheepland;
+		this.command = command;
+		this.options = options;
+	}
+	
+	/**
+	 * REQUESTED FROM SERVER
+	 * (CALLED FROM SHEEPLAND GUI)
+	 * 
+	 * check and manage the command arrived, and send an appropriate response.
+	 * (try to recognize move type)
+	 * 
+	 * @param playerNumber
+	 * @param currPlayerNum
+	 * @param dice is the animated gif
+	 * @param numDice is the counter
+	 * @param diceNum is the rnd num from server
+	 * @param gif7
+	 * @param notify
+	 * @param notifyImg
+	 * @param numbers
+	 * @param sheepland
+	 * @param cci
+	 */
+	public void run() {
+		
+		//COMMAND CHECK
+		try{
+			  
+			DestinationDatabase ddb = new DestinationDatabase();
+
+        	//wait
+        	Thread.sleep(100);
+        	
+        	//CASES (GUI COMMANDS)
+        	//Note: used from MapUpdate in game.server.view
+        	//if change here, change even that
+        	String[] guiCmdList = new String[]{
+        			//0
+        			"#player-name#",
+        			//1
+        			"#new-shepherd-pos#",
+        			//2
+        			"#shepherd-selection#",
+        			//3
+        			"#move-type#",
+        			//4
+        			"#move-target#",
+        			//5
+        			"#sheep-to-move#",
+        			//6
+        			"#b-sheep-to-move#",
+        			//7
+        			"#game-status#",
+        			//8
+        			"#show-notify#",
+        			//9
+        			"#new-dice#",
+        			//10
+        			"#plot-buy#"
+        	};
+        	        		
+        	//SWITCH CASES
+        	if(command.equals(guiCmdList[0])){
+        		//send back the progressive number
+        		sheepland.setValueToSend(Integer.parseInt(options));
+        		
+        	}else if(command.equals(guiCmdList[1])){
+        		//send the clicked pos id
+        		MovementsController.setCatcher(true, 1, sheepland, options);
+        		
+        	}else if(command.equals(guiCmdList[2])){
+        		//send the clicked shepherd id
+        		MovementsController.setCatcher(true, 5, sheepland, options);
+        		
+        	}else if(command.equals(guiCmdList[3])){
+        		//send the clicked type of move id
+        		MovementsController.setCatcher(true, 4, sheepland, options);
+        		
+        	}else if(command.equals(guiCmdList[4])){
+        		//send the clicked pos id (as case 1)
+        		MovementsController.setCatcher(true, 1, sheepland, options);
+        		
+        	}else if(command.equals(guiCmdList[5])){
+        		//show the arrow
+        		
+        		//recognize from the options arrived string, the two region to show arrows (the format is reg + "#" + newreg)
+        		String[] parts = options.split("#");
+        		int reg1 = Integer.parseInt(parts[0]);
+        		int reg2 = Integer.parseInt(parts[1]); 
+        		
+        		//move arrows
+        		sheepland.getArrowUp().setLocation(
+        				ddb.getRegionsCenterCoords().get(reg1-1)[0]-25,
+        				ddb.getRegionsCenterCoords().get(reg1-1)[1]-35
+        				);
+        		sheepland.getArrowDown().setLocation(
+        				ddb.getRegionsCenterCoords().get(reg2-1)[0]-25,
+        				ddb.getRegionsCenterCoords().get(reg2-1)[1]-35
+        				);
+        		
+        		//show arrows
+        		sheepland.getArrowUp().setVisible(true);
+        		sheepland.getArrowDown().setVisible(true);
+        		
+        		//recognize click
+        		MovementsController.setCatcher(true, 2, sheepland, options);
+        		
+        		//wait
+        		Thread.sleep(4000);
+        		
+        		//hide arrows
+        		sheepland.getArrowUp().setVisible(false);
+        		sheepland.getArrowDown().setVisible(false);
+        		
+        	}else if(command.equals(guiCmdList[6])){
+        		//fare prima bianca e copiare
+        		
+        		
+        	}else if(command.equals(guiCmdList[7])){
+        		//send 0 = NO
+        		sheepland.setValueToSend(0);
+        		
+        	}else if(command.equals(guiCmdList[8])){
+	        		
+        		//print txt on notify
+        		notify.setText(options);	        				
+        		notify.setVerticalTextPosition(SwingConstants.CENTER);
+        		notify.setHorizontalTextPosition(SwingConstants.CENTER);
+        		notify.setToolTipText("notification center");
+        			        		
+        		//show notify
+        		//cci.showOnClient("new notify arrived and shown");
+        		notify.setVisible(true);
+        		
+        		//hide notify async
+        		hideNotify();
+        		
+        	}else if(command.equals(guiCmdList[9])){
+            	//show dice num and gif
+            	gif7.setVisible(false);
+            	dice.setVisible(true);
+            	
+            	//update counter
+            	numDice.setIcon(new ImageIcon(numbers.get(diceNum)));
+            	
+            	//set static img async
+            	resetDiceStatic();
+            	
+        	}else if(command.equals(guiCmdList[10])){
+        		//plot card purchase
+        		//recognize click (options has the format "reg#reg"  or only one "reg")
+    			MovementsController.setCatcher(true, 3, sheepland, options);
+        	}
+
+    	}catch(Exception e){
+    		//do nothing, the server was not ready for a move
+    		ClientLogger.silentExceptionClientLogger("TurnUpdate", e);
+    	}
+	}
+	
+	//ENGINES
+	
+	/**
+	 * Hide a notify after few second
+	 */
+	private void hideNotify(){
+		//IN NEW THREAD
+		//HIDE AFTER N SECONDS
+        Runnable task = new Runnable() {
+            public void run() {
+                try {
+                	
+                	//wait
+	        		Thread.sleep(6000);
+	        		
+	        		//hide notify
+	        		//cci.showOnClient("notify was removed");
+	        		notify.setVisible(false);
+	        		
+                } catch (Exception ex) {
+                	ClientLogger.silentExceptionClientLogger("notify", ex);
+                }
+            }
+        };
+        new Thread(task).start();
+	}
+	private void resetDiceStatic(){
+		//IN NEW THREAD
+		//HIDE AFTER N SECONDS
+        Runnable task = new Runnable() {
+            public void run() {
+                try {
+                	
+                	//wait
+	        		Thread.sleep(4500);
+	        		
+	        		//hide dice
+	            	dice.setVisible(false);
+	            	gif7.setVisible(true);
+
+                } catch (Exception ex) {
+                	ClientLogger.silentExceptionClientLogger("dice rnd", ex);
+                }
+            }
+        };
+        new Thread(task).start();
+	}
+	
+}

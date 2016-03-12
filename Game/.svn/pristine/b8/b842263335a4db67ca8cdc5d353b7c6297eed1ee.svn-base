@@ -1,0 +1,251 @@
+package game.client.view;
+
+import java.rmi.AccessException;
+import java.rmi.RemoteException;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.Scanner;
+
+import game.client.interfaces.ClientConsoleInterface;
+import game.client.view.gui.GuiInitializer;
+import game.client.view.gui.model.Sheepland;
+
+/**
+ * 
+ * CLIENT CONSOLE
+ * SHOW A MESSAGE FROM SERVER
+ * 
+ * @author Leonardo
+ *
+ */
+public class ClientConsole extends UnicastRemoteObject implements ClientConsoleInterface {
+
+	private static final long serialVersionUID = 1L;
+	private static int assignedToPlayer;
+	
+	/**
+	 * CONSTRUCTOR
+	 * @throws RemoteException
+	 */
+	public ClientConsole() throws RemoteException {}
+
+	/**
+	 * PRINT TO CLIENT CONSOLE
+	 * a string generic message
+	 */
+	public void showOnClient(String message) throws RemoteException {
+		//PRINT
+		System.out.println(message);
+		ClientConsoleGui.showOnConsoleGui(message);
+	}
+	
+	/**
+	 * REQUEST FROM CLIENT CONSOLE A INT
+	 * @throws InterruptedException 
+	 */
+	public int readFromClient() throws RemoteException, InterruptedException {
+		if(GuiInitializer.isConsoleInput){
+			return requestIntInput();
+		}else{
+			return requestIntInputOverride();
+		}
+	}
+	
+	/**
+	 * REQUEST FROM CLIENT CONSOLE A STRING
+	 * @throws InterruptedException 
+	 */
+	public String readFromClientStr() throws RemoteException, InterruptedException {
+		if(GuiInitializer.isConsoleInput){
+			return requestStrInput();
+		}else{
+			return Integer.toString(requestIntInputOverride());
+		}
+	}
+	
+	/**
+	 * LOG AN EXCEPTION IN THE CLIENT
+	 */
+	public void exceptionClientLogger(String str, Exception e) throws RemoteException {
+		System.err.println("CLIENT EXCEPTION: " + str);
+		System.err.println(e);
+	}
+	
+	/**
+	 * CLIENT DEBUG METHODS
+	 */
+	public void showAllObjectsOnRegistry(Registry registry) throws RemoteException {
+		//get objects
+		String[] obj = null;
+		try {
+			obj = registry.list();
+		} catch (AccessException e1) {
+		} catch (RemoteException e1) {
+		}
+		
+		//print
+		System.out.println("Objects on registry:");
+		for(int	i=0;i<obj.length;i++){
+			System.out.println(" -> " + obj[i]);
+		}
+	}
+	
+	/**
+	 * CLEAR SYSTEM CONSOLE SCREEN
+	 */
+	public void clearConsole() throws RemoteException{
+		//TRY TO CLEAR SCREEN
+		try {
+			Runtime.getRuntime().exec("cls");
+			Runtime.getRuntime().exec("clear");
+		}catch(Exception e){
+			for(int i=0; i<10; i++) System.out.println();
+		}
+		ClientConsoleGui.clearConsoleGui();
+	}
+	
+	/**
+	 * PLAY A SOUND ON CLIENT
+	 */
+	public void playSound(String name) throws RemoteException{
+		try{
+			//play in separate thread
+			new Thread(new SoundPlayer(name)).run();
+		}catch(Exception e){
+			//TODO LOGGER
+		}
+	}
+	
+	//SECONDARY METHODS
+	public int getAssignedToPlayer() throws RemoteException{
+		return assignedToPlayer;
+	}
+	public void setAssignedToPlayer(int i) throws RemoteException{
+		assignedToPlayer = i;
+	}
+	
+	//////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	/**
+	 * Scanner definition
+	 */
+	private Scanner in = new Scanner(System.in);
+	
+	/**
+	 * Main int IN method
+	 * @return
+	 * @throws RemoteException 
+	 */
+	private int requestIntInput() throws RemoteException{
+		int scan = 0;
+		try{
+			
+			if(in.hasNextInt()){
+				scan = in.nextInt();
+			}else{
+				throw new IllegalArgumentException();
+			}
+			
+		}catch(Exception e){
+			
+			//logger
+			//CustomLogger.logEx(getClass().getName(), "requestIntInput", "is requested an integer", Level.WARNING, e);
+			
+			//notify
+			showOnClient("is requested an integer");
+			
+			//clear buffer
+			in.next();
+			
+			//reset
+			scan = 0;
+		}
+		
+		//in.close(); //don't close for next call
+		
+		return scan;
+	}
+	
+	/**
+	 * Main str IN method
+	 * @return
+	 */
+	private String requestStrInput(){
+		return in.next();
+	}
+	
+	/////////////////////////////////////////////////////////////////////////////////////////////////////
+	//GUI METHODS
+	//REQUESTED BY SERVER TO UPDATE A THE MAP
+	
+	/**
+	 * MAIN INITIALIZATOR FOR NEW VIEW
+	 * CREATES A THREAD FOR THE MAIN GUI START
+	 * (requested by server)
+	 */
+	public boolean showGameWindow(int totalPlayersNum) throws RemoteException, InterruptedException {
+		
+		//REQUESTED BY SERVER
+		//WINDOWS THREAD INITIALIZATION
+		GuiInitializer mainGui = new GuiInitializer(totalPlayersNum);
+		Thread gui = new Thread(mainGui);
+		gui.start();
+
+		//RETURN TO SERVER (wait init of gui)
+		Thread.sleep(5000);
+		return true;
+	}
+	
+	/**
+	 * PUTS IN SERVER INPUT THE NEW FOUND VALUE
+	 * OVERRIDING THE KEYBOARD INPUT
+	 * FOR GUI USE ONLY
+	 * @return
+	 * @throws InterruptedException 
+	 */
+	private int requestIntInputOverride() throws InterruptedException{
+		
+		Sheepland sheeplandGui = GuiInitializer.getSheeplandGui();
+		
+		//search for new value
+		while(sheeplandGui.getValueToSend()==-1){
+			Thread.sleep(100);
+		}
+		
+		int val = sheeplandGui.getValueToSend();
+		
+		//reset default value
+		sheeplandGui.setValueToSend(-1);
+		
+		//return to server
+		System.out.println("SENDING INPUT! -  " +  val);	
+
+		return val;
+		
+	}
+	
+	
+	/**
+	 * RECEIVE A COMMAND FROM SERVER
+	 * (REMORE REQUEST)
+	 * @param command
+	 */
+	public void receiveCommandFromServer(String command, String options) throws RemoteException {
+		
+		try{
+			
+			Sheepland sheeplandGui = GuiInitializer.getSheeplandGui();
+			
+			//set new request in game (client)
+			sheeplandGui.updateServerNewRequest(command, options);
+			
+			//launch the move engine checker
+			sheeplandGui.newServerRequestArrived(command, options);
+			
+		}catch(Exception e){
+			//TODO
+			//e.printStackTrace();
+		}
+	}
+	
+}

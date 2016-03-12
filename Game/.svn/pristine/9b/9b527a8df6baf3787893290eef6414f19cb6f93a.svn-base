@@ -1,0 +1,82 @@
+package game.server.model;
+
+/**
+ * MAIN SHEPHERD CLASS
+ * 
+ * @author Leonardo
+ */
+public class Shepherd extends Pawn {
+	
+	//shepherd identifier
+	private int shepherdIdentifier;
+	
+	//position target of shepherd (actual location)
+	private Position target;
+	
+	//store as string the color of the shepherd
+	private String color;
+	
+	//obj identifier
+	private static final String OBJ_IDENTIFIER = "Shepherd";
+	
+	
+	/**
+	 * CONSTRUCTOR AND INITIALIZATION
+	 */
+	public Shepherd(int id, String col) {
+		//Initialization is all in this constructor
+		setThisObjType(OBJ_IDENTIFIER);
+		shepherdIdentifier = id;
+		color = col;
+		target = null;
+	}
+	public Shepherd() {
+		this(0, null);
+	}
+	
+	
+	/**
+	 * METHODS
+	 */
+	
+	/**
+	 * Get this shepherd identifier
+	 * @return 
+	 */
+	public int getShepherdIdentifier(){
+		return shepherdIdentifier;
+	}
+	
+	/**
+	 * Getter for object's type
+	 * @return
+	 */
+	public String getThisObjType(){
+		return OBJ_IDENTIFIER;
+	}
+	
+	/**
+	 * Set new shepherd target (location)
+	 * @param
+	 */
+	public void setNewShepherdTarget(Position tgt){
+		target = tgt;
+	}
+	
+	/**
+	 * Get current shepherd target (location)
+	 * @return
+	 */
+	public Position getCurrShepherdTarget(){
+		return target;
+	}
+
+	/**
+	 * Get the current setted color
+	 * @return
+	 */
+	public String getCurrShepherdColor() {
+		return color;
+	}
+	
+}

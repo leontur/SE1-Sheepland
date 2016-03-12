@@ -1,0 +1,72 @@
+package game.server.controller;
+
+import static org.junit.Assert.*;
+
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
+
+import game.server.model.Database;
+import game.server.model.Dinar;
+import game.server.model.Game;
+import game.server.model.Player;
+import game.server.model.Region;
+import game.server.model.Shepherd;
+import game.server.model.StandardCard;
+import game.server.rmi.interfaces.DatabaseInterface;
+import game.server.view.Console;
+import game.server.view.ViewerInterface;
+
+import org.junit.Test;
+
+/**
+ * Move management-test class
+ * For Cards
+ * 
+ * @author Dario
+ */
+public class MoveCardsTest {
+	
+	public MoveCards tester;
+	private static DatabaseInterface db = new Database();
+	
+	/**
+	 * Control terrain card purchase method
+	 * @throws RemoteException
+	 */
+	@Test
+	public void buyCardTest(){
+		
+		Game game = new Game();
+		
+		ViewerInterface mainGameViewer = new Console(game);
+		
+		Shepherd shepherd = new Shepherd(); 
+		List<Shepherd> sheplist = new ArrayList<Shepherd>();
+		sheplist.add(new Shepherd());
+		
+		List<Dinar> dinlist = new ArrayList<Dinar>();
+		dinlist.add(new Dinar());
+		
+		Player player = new Player("testplayer", sheplist, dinlist, new StandardCard("Hill", 0,0));
+		player.addCardToOwned(new StandardCard("Hill", 1, 2));
+		
+		List<Region> allRegions = new ArrayList<Region>();
+		List<List<StandardCard>> plotCardsPileByPlotType = new ArrayList<List<StandardCard>>();
+		List<StandardCard> stdlist = new ArrayList<StandardCard>();
+		stdlist.add(new StandardCard());
+	
+		MoveCards.buyCard(game, player, null, allRegions, plotCardsPileByPlotType, mainGameViewer,0,true);
+		
+		
+		List<Region> regAroundShepherd = CheckMove.findRegionsWithSamePos(allRegions, shepherd.getCurrShepherdTarget());
+		for(int i=0; i < db.getPlotTypes().size();i++){
+		
+		if(regAroundShepherd == allRegions){
+			assertTrue(true);
+		}
+	}
+		assertTrue(false);
+	
+	}
+}

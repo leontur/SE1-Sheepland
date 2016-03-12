@@ -1,0 +1,52 @@
+package game.server.controller;
+
+import static org.junit.Assert.*;
+
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
+
+import game.server.model.Dice;
+import game.server.model.Game;
+import game.server.model.Position;
+import game.server.model.Region;
+import game.server.model.Sheep;
+import game.server.model.Wolf;
+import game.server.view.Console;
+import game.server.view.ViewerInterface;
+
+import org.junit.Test;
+
+public class MoveWolfTest {
+
+	@Test
+	public void test() throws RemoteException {
+		
+		Game game = new Game();
+		Wolf wolf = new Wolf();
+		List<Region> allRegions = new ArrayList<Region>();
+		allRegions.add(new Region());
+		List<Sheep> allSheeps = new ArrayList<Sheep>();
+		allSheeps.add(new Sheep(1));
+		Dice dice = new Dice();
+		ViewerInterface mainGameViewer = new Console(game);
+		
+		Position pos = new Position(4, 0);
+		pos.addAdjPosAroundThis(new Position(7, 0));
+		
+		MoveWolf.moveWolfAutoJump(game, wolf, allRegions, allSheeps, dice, mainGameViewer);
+		
+		int rndnum = dice.getNewRandomNum();
+		List<Position> tmpPos = wolf.getTarget().getBorders();
+		for(int i=0; i<tmpPos.size(); i++){
+			
+			if(rndnum == tmpPos.get(i).getPosViewVal()){
+				
+				assertTrue(true);
+				}
+			}
+		assertTrue(false);
+		}
+	
+}
+

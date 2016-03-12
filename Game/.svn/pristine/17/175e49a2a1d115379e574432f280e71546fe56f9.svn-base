@@ -1,0 +1,161 @@
+package game.server.view;
+
+import game.server.model.*;
+
+import java.rmi.registry.Registry;
+import java.util.List;
+
+/**
+ * 
+ * USER INTERACTION MAIN INTERFACE
+ * 
+ * Interface can be:
+ *  -textual
+ *  -gui
+ * 
+ * @author Leonardo
+ *
+ */
+public interface ViewerInterface {
+	
+	/////////////////////////////////////////////////////////////////////////////////////
+	//START CONSOLE
+	
+	void setNewGameIf(Game game);
+	
+	void setIsSocketMode(boolean mode);
+	
+	/**
+	 * Send a notify to all clients
+	 * @param message
+	 */
+	void notifyAllClients(String message);
+	
+	void printToConsole(String message);
+	
+	boolean isClientAlive(int clientid);
+	
+	void clearConsole(boolean toAll);
+	
+	//PLAYER
+	
+	int askPlayersNumber();
+	
+	String askPlayerName(int playerNumber);
+	
+	//SHEPHERD
+	
+	int askForNewShepherdPosition(int shepherd, String playerName);
+		
+	int askWhichShepherd(String playerName);
+	
+	//MOVE
+	
+	int askForNewMoveType(String playerName, int remMoves);
+	
+	int askForNewMoveTarget();
+	
+	boolean askForSheepToMove(int reg, int newreg);
+	
+	boolean askForBSheepToMove(int reg, int newreg);
+	
+	boolean askForGameStatus();
+	
+	//MESSAGE OR NOTIFY
+	
+	void notifyNotAllowedMoveReAsk();
+	
+	void notifyInvalidPlayersNumberSelection();
+	
+	void notifyMoveCost(int price);
+	
+	void notifyNoAdjPosition();
+	
+	void notifyDinarsAreOut();
+	
+	void notifyPositionBusy();
+	
+	void notifyBSheepAutoMove(boolean status);
+	
+	void notifyMoveOnlyShepherd();
+	
+	void notifyCurrentPosition(int pos);
+	
+	void notifyMoveSuccessShepherd(int pos, int newpos);
+	
+	void notifyMoveSuccessSheep(int sheep, int reg, int newreg);
+	
+	void notifyMoveSuccessBSheep(int bsheep, int reg, int newreg);
+	
+	void notifyMoveAbortSheepAlreadyMoved();
+	
+	void notifyMoveAbortBSheepAutoJump(String posBusyBy);
+
+	void notifyMoveAbort();
+	
+	void notifySheepsAreOut();
+	
+	void notifyCardBought(int cardid, String plottype);
+	
+	void notifyNewTurn();
+	
+	
+	//ENVIRONMENT
+	
+	void showWelcomeMessage();
+	
+	void showClientWelcome(int ply);
+	
+	void showSheepsAroundShepherd(List<Region> regions);
+	
+	int  showPlotTypesAroundShepherd(List<Region> regions, int[] boughtTypes);
+	
+	void showMapStatus(List<List<Region>> regionPileByPlotType, int[] boughtTypes, List<City> allCities, Wolf wolf);
+	
+	void showRegionStatus(List<Region> allRegions, List<City> allCities, Wolf wolf);
+	
+	void showPlayerStatus(Player player, List<List<Region>> regionPileByPlotType);
+	
+	void showPlayerScore(Player player, List<SheepBlack> allBSheeps, List<List<Region>> regionPileByPlotType);
+	
+	void showNewRandomDice(int rnd);
+	
+	//FINAL COUNTERS
+	
+	void notifyForWinner(Game game, List<List<Integer>> sortedlist);
+	
+	//ADDITIONAL RULES
+	//WOLF
+	
+	void notifyWolfAutoMove(boolean status);
+	
+	void notifyMoveSuccessWolf(int reg, int newreg);
+	
+	void notifyMoveOverrideWolfAutoJump(String posBusyBy);
+	
+	void notifyMoveAbortOverrideWolfAutoJump(String posBusyBy);
+	
+	void notifyWolfAutoEat(boolean status);
+	
+	//ONLINE GAME
+	//CLIENT - SERVER - RMI - SOCKET
+		
+	void showAllObjectsOnRegistry(Registry registry);
+	
+	void notifyIsDoingTurnAnotherPlayer();
+	
+	void playSoundOnClient(String nameTrack);
+	
+	//END CONSOLE
+	/////////////////////////////////////////////////////////////////////////////////////
+	
+	/////////////////////////////////////////////////////////////////////////////////////
+	//START GUI
+
+	//SHOW THE GAME BOARD MAP
+	boolean showMap(int mode, boolean debug);
+	
+	//END GUI
+	/////////////////////////////////////////////////////////////////////////////////////
+	
+}

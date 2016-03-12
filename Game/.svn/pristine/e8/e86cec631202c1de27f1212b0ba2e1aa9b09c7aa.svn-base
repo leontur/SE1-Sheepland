@@ -1,0 +1,680 @@
+package game.server.model;
+
+import static org.junit.Assert.*;
+
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.List;
+
+import game.client.interfaces.ClientConsoleInterface;
+import game.client.view.ClientConsole;
+import game.server.model.Game;
+
+import org.junit.Test;
+
+/**
+ * MAIN GAME-TEST CLASS
+ * 
+ * @author Dario
+ */
+
+public class GameTest {
+	
+	//CLASS VARS
+	public Game tester = new Game();
+	
+    /**
+     * Check the object type
+     * @param name
+     */
+    @Test
+	public void getObjTypeTest() {
+    	String testString = "test";
+    	tester.setThisObjType(testString);
+		assertEquals(tester.getObjType(), testString);
+	}
+	
+	@Test
+	public void setThisObjTypeTest1(){
+		getObjTypeTest();
+	}
+	
+	/**
+	 * Check the number of players
+	 */
+	@Test
+	public void getPlayersNumberTest(){
+		int testInt = 1;
+		tester.setPlayersNumber(testInt);
+		assertEquals(tester.getPlayersNumber(), testInt);
+	}
+	
+	@Test
+	public void setPlayersNumberTest(){
+		getPlayersNumberTest();
+	}
+
+	/**
+	 * Check all game positions
+	 * @throws RemoteException
+	 */
+	@Test
+	public void getGameAllPositionTest(){
+		List<Position> allPositions = new ArrayList<Position>();
+		allPositions.add(new Position());
+    	tester.setGameAllPositions(allPositions);
+		assertEquals(tester.getGameAllPositions(), allPositions);
+	}
+	
+	@Test
+	public void setGameAllPositionsTest1(){
+		getGameAllPositionTest();
+	}
+	
+	/**
+	 * Check all sheep in the game
+	 * @throws RemoteException
+	 */
+	@Test
+	public void getGameAllSheepsTest(){
+		List<Sheep> allSheeps = new ArrayList<Sheep>();
+		allSheeps.add(new Sheep());
+		tester.setGameAllSheeps(allSheeps);
+		assertEquals(tester.getGameAllSheeps(), allSheeps);
+	}
+	
+	@Test
+	public void setGameAllSheepsTest(){
+		getGameAllSheepsTest();
+	}
+	
+	/**
+	 * Check all Black sheep in the game
+	 * @throws RemoteException
+	 */
+	@Test
+	public void getGameAllallBSheepsTest(){
+		List<SheepBlack> allBSheeps = new ArrayList<SheepBlack>();
+		allBSheeps.add(new SheepBlack());
+		tester.setGameAllallBSheeps(allBSheeps);
+		assertEquals(tester.getGameAllBSheeps(), allBSheeps);
+	}
+	
+	@Test
+	public void setGameAllallBSheepsTest(){
+		getGameAllallBSheepsTest();
+	}
+	
+	/**
+	 * Check initial cards' pile
+	 * @throws RemoteException
+	 */
+	@Test
+	public void getGameInitialCardsPileTest(){
+		List<InitialCard> ic = new ArrayList<InitialCard>();
+		ic.add(new InitialCard());
+		tester.setGameInitialCardsPile(ic);
+		assertEquals(tester.getGameInitialCardsPile(), ic);
+	}
+	
+	@Test
+	public void setGameInitialCardsPileTest(){
+		getGameInitialCardsPileTest();
+	}
+	
+	/**
+	 * Check plot cards pile by plot type
+	 * @throws RemoteException
+	 */
+	@Test
+	public void getGamePlotCardsPileByPlotTypeTest(){
+		List<List<StandardCard>> sc = new ArrayList<List<StandardCard>>();
+		List<StandardCard> sclist = new ArrayList<StandardCard>();
+		sclist.add(new StandardCard(null, 0, 0));
+		sc.add(sclist);
+		tester.setGamePlotCardsPileByPlotType(sc);
+		assertEquals(tester.getGamePlotCardsPileByPlotType(), sc);
+	}
+	
+	@Test
+	public void setGamePlotCardsPileByPlotTypeTest(){
+		getGamePlotCardsPileByPlotTypeTest();
+	}
+	
+	/**
+	 * Check region pile by plot type
+	 * @throws RemoteException
+	 */
+	@Test
+	public void getGameRegionPileByPlotTypeTest(){
+		List<List<Region>> re = new ArrayList<List<Region>>();
+		List<Region> relist = new ArrayList<Region>();
+		relist.add(new Region(0, null, null));
+		re.add(relist);
+		tester.setGameRegionPileByPlotType(re);
+		assertEquals(tester.getGameRegionPileByPlotType(), re);
+	}
+	
+	@Test
+	public void setGameRegionPileByPlotTypeTest(){
+		getGameRegionPileByPlotTypeTest();
+	}
+	
+	/**
+	 * Check all regions
+	 * @throws RemoteException
+	 */
+	@Test
+	public void getGameAllRegionsTest(){
+		List<Region> re = new ArrayList<Region>();
+		re.add(new Region());
+		tester.setGameAllRegions(re);
+		assertEquals(tester.getGameAllRegions(), re);
+	}
+	
+	@Test
+	public void setGameAllRegionsTest(){
+		getGameAllRegionsTest();
+	}
+	
+	/**
+	 * Check all cities
+	 * @throws RemoteException
+	 */
+	@Test 
+	public void getGameAllCitiesTest(){
+		List<City> ci = new ArrayList<City>();
+		ci.add(new City());
+		tester.setGameAllCities(ci);
+		assertEquals(tester.getGameAllCities(),ci);
+	}
+	
+	@Test
+	public void setGameAllCitiesTest(){
+		getGameAllCitiesTest();
+	}
+	
+	/**
+	 * Check all shepherds
+	 * @throws RemoteException
+	 */
+	@Test
+	public void getGameAllShepherds(){
+		List<Shepherd> sh = new ArrayList<Shepherd>();
+		sh.add(new Shepherd());
+		tester.setGameAllShepherds(sh);
+		assertEquals(tester.getGameAllShepherds(),sh);
+	}
+	
+	@Test
+	public void setGameAllShepherdsTest(){
+		getGameAllShepherds();
+	}
+	
+	/**
+	 * Check all dinars 
+	 * @throws RemoteException
+	 */
+	@Test
+	public void getGameAllDinarsTest(){
+		List<Dinar> di = new ArrayList<Dinar>();
+		di.add(new Dinar());
+		tester.setGameAllDinars(di);
+		assertEquals(tester.getGameAllDinars(), di);
+	}
+	
+	@Test
+	public void setGameAllDinarsTest(){
+		getGameAllDinarsTest();
+	}
+	
+	/**
+	 * Check all standard enclosures
+	 * @throws RemoteException
+	 */
+	@Test
+	public void getGameAllStandardEnclosuresTest(){
+		List<Enclosure> en = new ArrayList<Enclosure>();
+		en.add(new Enclosure());
+		tester.setGameAllStandardEnclosures(en);
+		assertEquals(tester.getGameAllStandardEnclosures(), en);
+	}
+	
+	@Test
+	public void setGameAllStandardEnclosuresTest(){
+		getGameAllStandardEnclosuresTest();
+	}
+	
+	/**
+	 * Check all final enclosures
+	 * @throws RemoteException
+	 */
+	@Test
+	public void getGameAllFinalEnclosuresTest(){
+		List<FinalEnclosure> fen = new ArrayList<FinalEnclosure>();
+		fen.add(new FinalEnclosure());
+		tester.setGameAllFinalEnclosures(fen);
+		assertEquals(tester.getGameAllFinalEnclosures(), fen);
+	}
+	
+	@Test
+	public void setGameAllFinalEnclosuresTest(){
+		getGameAllFinalEnclosuresTest();
+	}
+	
+	/**
+	 * Check dice
+	 * @throws RemoteException
+	 */
+	@Test
+	public void getGameDiceTest(){
+		Dice dice = new Dice();
+		tester.setGameDice(dice);
+		assertEquals(tester.getGameDice(), dice);
+	}
+	
+	@Test
+	public void setGameDiceTest1(){
+		this.getGameDiceTest();
+	}
+	
+	/**
+	 * Check wolf
+	 * @throws RemoteException
+	 */
+	@Test
+	public void getGameWolfTest(){
+		Wolf wolf = new Wolf();
+		tester.setGameWolf(wolf);
+		assertEquals(tester.getGameWolf(), wolf);
+	}
+	
+	@Test
+	public void setGameWolfTest(){
+		getGameWolfTest();
+	}
+	
+	/**
+	 * Check players
+	 * @throws RemoteException
+	 */
+	@Test
+	public void getGamePlayersTest(){
+		List<Player> pl = new ArrayList<Player>();
+		pl.add(new Player());
+		tester.setGamePlayers(pl);
+		assertEquals(tester.getGamePlayers(),pl);
+	}
+	
+	@Test
+	public void setGamePlayersTest(){
+		getGamePlayersTest();
+	}
+    /**
+     * Check viewer
+     * @throws RemoteException
+     */
+	@Test
+	public void getGameViewerTest(){
+		tester.setGameViewer(null);
+		assertNull(tester.getGameViewer());
+	}
+	
+	@Test
+	public void setGameViewerTest(){
+		getGameViewerTest();
+	}
+	
+	/**
+	 * Check if all players are initialized
+	 */
+	@Test
+	public void isAllPlayersInitializedTest(){
+		tester.setAllPlayersInitialized(true);
+		assertTrue(tester.isAllPlayersInitialized());
+	}
+	
+	@Test
+	public void setAllPlayersInitializedTest(){
+		tester.setAllPlayersInitialized(true);
+		assertTrue(tester.isAllPlayersInitialized());
+	}
+	
+	/**
+	 * Check if the game runs
+	 */
+	@Test
+	public void isRunningGameTest(){
+		tester.setRunningGame(true);
+		assertTrue(tester.isRunningGame());
+	}
+	
+	@Test
+	public void setRunningGameTest(){
+		tester.setRunningGame(true);
+		assertTrue(tester.isRunningGame());
+		
+	}
+	
+	/**
+	 * Check all requested views
+	 */
+	@Test
+	public void getAllViewsRequestedTest(){
+		tester.setAllViewsRequested(true);
+		assertTrue(tester.getAllViewsRequested());
+	}
+	
+	@Test
+	 public void setAllViewsRequestedTest(){
+		tester.setAllViewsRequested(true);
+		assertTrue(tester.getAllViewsRequested());
+	}
+	
+	/**
+	 * Check and add a viewer list
+	 * @throws RemoteException
+	 */
+	
+	@Test
+	public void getViewerListTest(){
+		ClientConsoleInterface cC;
+		try {
+			cC = new ClientConsole();
+			List<ClientConsoleInterface> clientConsoleInterfaceList = new ArrayList<ClientConsoleInterface>();
+			clientConsoleInterfaceList.add(cC);
+			tester.addViewerToList(cC);
+			assertEquals(tester.getViewerList(), clientConsoleInterfaceList);
+			
+		} catch (RemoteException e) {
+			assertTrue(true);
+		}
+	}
+	
+	@Test
+	public void addViewerToListTest(){
+		getViewerListTest();
+	}
+	
+	/**
+	 * Check viewer list
+	 */
+	@Test
+	public void getViewerListTestA(){
+		List<ClientConsoleInterface> CCI = new ArrayList<ClientConsoleInterface>();
+		try {
+			CCI.add(new ClientConsole());
+			tester.setViewerList(CCI);
+			assertEquals(tester.getViewerList(), CCI);
+		} catch (RemoteException e) {
+			assertTrue(true);
+		}
+		
+	}
+	
+	@Test
+	public void setViewerListTest(){
+		getViewerListTestA();
+	}
+	
+	/**
+	 * Check if shepherd has been moved
+	 * boolean
+	 */
+	@Test
+	public void isShepherdBeenMovedTest(){
+		tester.setShepherdBeenMoved(true);
+		assertTrue(tester.isShepherdBeenMoved());
+		}
+	
+	/**
+	 * Check if shepherd has been moved
+	 * boolean
+	 */
+	@Test 
+	public void setShepherdBeenMovedTest(){
+		tester.setShepherdBeenMoved(true);
+		assertTrue(tester.isShepherdBeenMoved());
+	}
+	
+	/**
+	 * Check if a card has been bought
+	 * boolean
+	 */
+	@Test
+	public void isCardBeenBoughtTest() {
+		tester.setFieldBeenBought(true);
+		assertTrue(tester.isCardBeenBought());
+	}
+	
+	/**
+	 * Check if a card has been bought
+	 * boolean
+	 */
+	@Test
+	public void setFieldBeenBoughtTest(){
+		tester.setFieldBeenBought(true);
+		assertTrue(tester.isCardBeenBought());
+	}
+	
+	/**
+	 * Check if sheep has been moved
+	 * boolean
+	 */
+	@Test
+	public void isSheepBeenMovedTest(){
+		tester.setSheepBeenMoved(true);
+		assertTrue(tester.isSheepBeenMoved());
+	}
+	
+	/**
+	 * Check if sheep has been moved
+	 * boolean
+	 */
+	@Test
+	public void setSheepBeenMovedTest(){
+		tester.setSheepBeenMoved(true);
+		assertTrue(tester.isSheepBeenMoved());
+	}
+	
+	/**
+	 * Check if black sheep has been moved
+	 * boolean
+	 */
+	@Test
+	public void isBSheepBeenMovedTest(){
+		tester.setBSheepBeenMoved(true);
+		assertTrue(tester.isBSheepBeenMoved());
+	}
+	
+	/**
+	 * Check if black sheep has been moved
+	 * boolean
+	 */
+	@Test
+	public void setBSheepBeenMovedTest(){
+		tester.setBSheepBeenMoved(true);
+		assertTrue(tester.isBSheepBeenMoved());
+	}
+	
+	/**
+	 * Check if is the final turn of the game
+	 * boolean
+	 */
+	@Test
+	public void isFinalTurnTest(){
+		tester.setFinalTurn(true);
+		assertTrue(tester.isFinalTurn());
+	}
+	
+	/**
+	 * Check if is the final turn of the game
+	 * boolean
+	 */
+	@Test
+	public void setFinalTurnTest(){
+		tester.setFinalTurn(true);
+		assertTrue(tester.isFinalTurn());
+	}
+	
+	/**
+	 * Check if wolf has been moved
+	 * boolean
+	 */
+	@Test
+	public void isWolfBeenMoved(){
+		tester.setWolfBeenMoved(true);
+		assertTrue(tester.isWolfBeenMoved());
+	}
+	
+	/**
+	 * Check if wolf has been moved
+	 * boolean
+	 */
+	@Test
+	public void setWolfBeenMoved(){
+		tester.setWolfBeenMoved(true);
+		assertTrue(tester.isWolfBeenMoved());
+	}
+	
+	/**
+	 * Clear moves
+	 */
+	@Test
+	public void clearMovesTest(){
+		tester.clearMoves();
+		if(tester.isSheepBeenMoved()== false && tester.isBSheepBeenMoved() == false && tester.isCardBeenBought() == false && tester.isWolfBeenMoved() == false && tester.getMoveDoneCount() == 0){
+			assertTrue(true);
+			
+		}
+	}
+	
+	/**
+	 * Check the number of standard enclosures left
+	 */
+	@Test
+	public void getRemainingStandardEnclosuresNumTest(){
+		int Int = 1;
+		tester.setRemainingStandardEnclosuresNum(Int);
+		assertEquals(tester.getRemainingStandardEnclosuresNum(), Int);
+		}
+	
+	@Test 
+	public void setRemainingStandardEnclosuresNumTest(){
+		getRemainingStandardEnclosuresNumTest();
+	}
+	
+	/**
+	 * Check the number of final enclosures left
+	 */
+	@Test
+	public void getRemainingFinalEnclosuresNumTest(){
+		int Int = 1;
+		tester.setRemainingFinalEnclosuresNum(Int);
+		assertEquals(tester.getRemainingFinalEnclosuresNum(), Int);
+	}
+	
+	@Test
+	public void setRemainingFinalEnclosuresNumTest(){
+		getRemainingFinalEnclosuresNumTest();
+	}
+	
+	/**
+	 * Check the count of maximum number of moves
+	 */
+	@Test
+	public void getMaxMoveCountTest(){
+		assertNotNull(tester.getMaxMoveCount());
+	}
+	
+	/**
+	 * Check all the types of bought cards
+	 */
+	@Test
+	public void getAllBoughtTypesTest(){
+		Database db = new Database();
+		Game game = new Game();
+		int[] integer =  new int[db.getPlotTypesNum()];
+		integer[0] = 1;
+		integer[1] = 2;
+		game.setAllBoughtTypes(integer);
+		int[] integer2 = game.getAllBoughtTypes();
+		assertTrue(integer[0] == integer2[0] && integer[1] == integer2[1]);
+	}
+	
+	/**
+	 * Check all the types of bought cards
+	 */
+	@Test
+	public void getAllBoughtTypesTestB(){
+		Game game = new Game();
+		game.setAllBoughtTypes(null);
+		assertNotNull(game.getAllBoughtTypes());
+	}
+	
+	@Test
+	public void setAllBoughtTypesTest(){
+		getAllBoughtTypesTest();
+	}
+	
+	/**
+	 * Check the count of done moves 
+	 */
+	@Test
+	public void getMoveDoneCountTest(){
+		int testInt = 1;
+		tester.setMoveDoneCount(testInt);
+		assertEquals(tester.getMoveDoneCount(), testInt);
+	}
+	
+	@Test
+	public void setMoveDoneCountTest(){
+		getMoveDoneCountTest();
+	}
+	
+	/**
+	 * Increase the count of moves by one
+	 */
+	@Test
+	public void increaseMoveDoneCountByOneTest(){
+		int prima = tester.getMoveDoneCount();
+			tester.increaseMoveDoneCountByOne();
+			assertEquals(tester.getMoveDoneCount() , prima+1);
+	}
+	
+	/**
+	 * Check the counter of the current player
+	 */
+	@Test
+	public void getCurrentPlayerCounterTest(){
+		int testInt = 1;
+		tester.setCurrentPlayerCounter(testInt);
+		assertEquals(tester.getCurrentPlayerCounter(), testInt);
+	}
+	
+	@Test
+	public void setCurrentPlayerCounterTest(){
+		getCurrentPlayerCounterTest();
+	}
+	
+	/**
+	 * Check the number of last dice thrown
+	 */
+	@Test
+	public void getLastDiceNumTest(){
+		int testInt =1;
+		tester.setLastDiceNum(testInt);
+		assertEquals(tester.getLastDiceNum(), testInt);
+	}
+	
+	@Test
+	public void setLastDiceNumTest(){
+		getLastDiceNumTest();
+	}
+}
+
+
+
+
+
+

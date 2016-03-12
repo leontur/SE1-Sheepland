@@ -1,0 +1,179 @@
+package game.server.model;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * MAIN POSITION CLASS
+ * 
+ * @author Leonardo
+ */
+public class Position extends Land {
+	
+	//OBJ IDENTIFIER
+	private static final String OBJ_IDENTIFIER = "Position";
+	
+	//POSITION IDENTIFIER
+	private int posIdentifier;
+	
+	//POSITION VIEWER VALUE
+	private int posViewerValue;
+	
+	//LIST OF ADJACENT POSITION (AROUND THIS POSITION)
+	private List<Position> adjPosAround = new ArrayList<Position>();
+	
+	//LIST - STATUS (OCCUPATION) OF POSITION
+	private List<Game> objOverPos = new ArrayList<Game>();
+	
+	
+	/**
+	 * CONSTRUCTOR AND INITIALIZATION
+	 * @
+	 */
+	public Position(int id, int viewval) {
+		setThisObjType(OBJ_IDENTIFIER);
+		posViewerValue = viewval;
+		posIdentifier = id;
+	}
+	public Position(){
+		this(0, 0);
+	}
+
+	
+	/**
+	 * METHODS
+	 * 
+	 * Getters
+	 * Setters
+	 * Logic checkers
+	 */
+	
+	/**
+	 * Set a new identifier for this position
+	 * @param newid
+	 */
+	public void setPosIdentifier(int newid){
+		posIdentifier = newid;
+	}
+
+	/**
+	 * Get the current position identifier
+	 * @return
+	 */
+	public int getPosIdentifier(){
+		return posIdentifier;
+	}
+	
+	/**
+	 * Set a new viewer value for this position
+	 * @param newval
+	 */
+	public void setPosViewVal(int newval){
+		posViewerValue = newval;
+	}
+
+	/**
+	 * Get the current position's viewer value
+	 * @return
+	 */
+	public int getPosViewVal(){
+		return posViewerValue;
+	}
+	
+	/**
+	 * Add new adjacent position around this position
+	 * @param newpos
+	 */
+	public void addAdjPosAroundThis(Position newpos){
+		this.adjPosAround.add(newpos);
+	}
+
+	/**
+	 * Get all (list) the current adjacent position around this position
+	 * @return
+	 */
+	public List<Position> getAllAdjPosAroundThis(){
+		return this.adjPosAround;
+	}
+	
+	/**
+	 * Add a new object over the position
+	 * @param obj
+	 */
+	public void addObjOverPos(Game obj){
+		objOverPos.add(obj);
+	}
+	
+	/**
+	 * Remove the last object from this position
+	 */
+	public void subLastObjFromPos(){
+		objOverPos.remove(objOverPos.size()-1);
+	}
+	
+	/**
+	 * Get the last object over this position
+	 * @return
+	 */
+	public Game getLastObjOverPos(){
+		return objOverPos.get(objOverPos.size()-1);
+	}
+	
+	/**
+	 * Get all (complete list) the current objects over this position
+	 * @return
+	 */
+	public List<Game> getAllObjOverPos(){
+		return objOverPos;
+	}
+	
+	/**
+	 * CHECK METHOD
+	 * for position occupation status (only if is free)
+	 * @return true if is occupied, else false if is free
+	 */
+	public boolean isObjOverPos(){
+		return objOverPos.isEmpty() ? false : true;
+	}
+	
+	/**
+	 * COUNT METHOD
+	 * for positiom occupation
+	 * @return the int number of total objects over this position
+	 */
+	public int posOccupationCount(){
+		return objOverPos.size();
+	}
+	
+	/**
+	 * CHECK IF THERE IS A STD ENCLOSURE OVER THIS POSITION
+	 */
+	public boolean isPosOccupiedByStdEnclosure(){
+
+		for(Game obj : objOverPos){
+			
+//System.out.println("OCCUP STD : " + obj.getObjType());
+
+			if(obj.getObjType().equals("Enclosure")){
+				return true;
+			}
+		}
+		return false;
+	}
+	/**
+	 * CHECK IF THERE IS A FINAL ENCLOSURE OVER THIS POSITION
+	 */
+	public boolean isPosOccupiedByFinEnclosure(){
+		
+		for(Game obj : objOverPos){
+			
+//System.out.println("OCCUP FIN : " + obj.getObjType());
+
+			if(obj.getObjType().equals("FinalEnclosure")){
+				return true;
+			}
+		}
+		return false;
+	}
+	
+}

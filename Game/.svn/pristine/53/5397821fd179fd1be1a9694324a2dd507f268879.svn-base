@@ -1,0 +1,58 @@
+package game.client.view.gui;
+
+import javax.swing.JLabel;
+
+/**
+ * FATHER CLASS OF A GENERIC STATIC OBJECT
+ * 
+ * PROPERTIES
+ * 	-view
+ * 
+ * @author Leonardo
+ *
+ */
+public class StaticObject extends JLabel {
+
+	/**
+	 * CLASS SERIAL VERSION ID
+	 */
+	private static final long serialVersionUID = 1L;
+	
+	/**
+	 * CLASS VARS
+	 */
+	private boolean isVisibleObject;
+	protected String dirPath = "./resources/img/";
+	protected String dirPathCards = "./resources/img/cards/";
+	protected String dirPathGif = "./resources/gif/";
+	private boolean isActiveObject;
+	
+	/**
+	 * CLASS CONTSTRUCTOR
+	 */
+	public StaticObject(){
+		isVisibleObject = true;
+		isActiveObject = true;
+	}
+	
+	/**
+	 * CLASS METHODS
+	 */
+	
+	public boolean isVisibleObject(){
+		return this.isVisibleObject;
+	}
+	
+	public void setIsVisibleObject(boolean status){
+		this.isVisibleObject = status;
+	}
+
+	public boolean isActiveObject(){
+		return this.isActiveObject;
+	}
+	
+	public void setIsActiveObject(boolean status){
+		this.isActiveObject = status;
+	}
+	
+}

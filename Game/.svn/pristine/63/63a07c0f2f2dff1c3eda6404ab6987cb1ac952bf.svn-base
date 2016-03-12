@@ -1,0 +1,233 @@
+package game.server.model;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * MAIN PLAYER OBJECT CLASS
+ * 
+ * @author Leonardo
+ */
+public class Player extends Game {
+
+	/**
+	 * Is initialized var (for remote init)
+	 */
+	private boolean isInitialized = false;
+	
+	/**
+	 * Retrieve player's name
+	 */
+	private String thisPlayerName;
+	
+	/**
+	 * Player's shepherd allocation
+	 * - >2 players : 1 shepherd
+	 * - =2 players : 2 shepherd
+	 */
+	private List<Shepherd> shepherds = new ArrayList<Shepherd>();
+	
+	/**
+	 * Player's available dinars
+	 */
+	private List<Dinar> remainingDinars = new ArrayList<Dinar>();
+	
+	/**
+	 * Player's initial plotcards
+	 */
+	private InitialCard initialCards;
+	
+	/**
+	 * Player's plotcards list (standard plot)
+	 */
+	private List<StandardCard> ownedStdCards = new ArrayList<StandardCard>(); 
+	
+	/**
+	 * Score temp var
+	 */
+	private int score;
+	
+	/**
+	 * CONSTRUCTOR
+	 * Player initialization
+	 * 
+	 * @param thisPlayerName
+	 * @param shepherds
+	 * @param remainingDinars
+	 * @param card
+	 */
+	public Player(String thisPlayerName, List<Shepherd> shepherds, List<Dinar> remainingDinars, InitialCard card) {
+		this.thisPlayerName = thisPlayerName;
+		this.shepherds = (shepherds==null) ? this.shepherds : shepherds;
+		this.remainingDinars = remainingDinars;
+		this.initialCards = card;
+		isInitialized = true;
+	}
+	public Player() {
+		this(null, null, null, null);
+	}
+	
+	
+	/**
+	 * LOGIC
+	 */
+	
+	/**
+	 * Subtract to 'remaining dinars' the passed amount
+	 * @param amount
+	 */
+	public void subtractDinars(int amount){
+		for(int i=0; i<amount; i++){
+			remainingDinars.remove(remainingDinars.size()-1);
+		}
+	}
+	
+	/**
+	 * Add a card to owned cards list
+	 * @param thiscard
+	 */
+	public void addCardToOwned(StandardCard thiscard){ 
+		ownedStdCards.add(thiscard);
+	}
+	
+	/**
+	 * Assign a shepherd to player
+	 * @param shepherds
+	 */
+	public void assignShepherdToPlayer(Shepherd thisone){
+		shepherds.add(thisone);
+	}
+	
+	/**
+	 * SETTERS
+	 */
+	
+	/**
+	 * Set a new player's name (String)
+	 * @param newname
+	 */
+	public void setPlayerName(String newname){
+		thisPlayerName = newname;
+	}
+	
+	/**
+	 * Set the initial terrain card
+	 * @param initTerrain
+	 */
+	public void setInitialPlot(InitialCard initTerrain){
+		initialCards = initTerrain;
+	}
+	
+	/**
+	 * Set score of this player
+	 * @param num
+	 */
+	public void setScore(int num) {
+		score = num;
+	}
+	
+	/**
+	 * GETTERS
+	 */
+	
+	/**
+	 * Get the name of current (object) player
+	 * @return
+	 */
+	public String getThisPlayerName(){
+		return thisPlayerName;
+	}
+	
+	/**
+	 * Get the list of shepherds of player
+	 * @return
+	 */
+	public List<Shepherd> getPlayerShepherdsList(){
+		return shepherds;
+	}
+	
+	/**
+	 * Get the complete list of cards owned by player
+	 * @return
+	 */
+	public List<StandardCard> getOwnedCards(){ 
+		return ownedStdCards; 
+	}
+	
+	/**
+	 * Get the last card owned by player
+	 * @return
+	 */
+	public StandardCard getLastOwnedCard(){ 
+		return ownedStdCards.get(ownedStdCards.size()-1); 
+	}
+	
+	/**
+	 * Get the count of player owned terrain cards
+	 * @return
+	 */
+	public int getCountOfOwnedCards(){
+		return this.ownedStdCards.size();
+	}
+	
+	/**
+	 * Get the remaining amount of dinars (for object player)
+	 * @return
+	 */
+	public List<Dinar> getRemainingDinars(){
+		return remainingDinars;
+	}
+	
+	/**
+	 * Get count of player remaining dinars
+	 * @return
+	 */
+	public int getCountOfRemainingDinars(){
+		return remainingDinars.size();
+	}
+	
+	/**
+	 * Get the count of the shepherds
+	 * @return
+	 */
+	public int getShephersCount(){
+		return shepherds.size();
+	}
+	
+	/**
+	 * Get the assigned initial card object
+	 * @return
+	 */
+	public InitialCard getInitialCards(){
+		return initialCards;
+	}
+	
+	/**
+	 * Get score of this player
+	 * @return
+	 */
+	public int getScore(){
+		return score;
+	}
+	
+	//RMI METHODS
+	
+	/**
+	 * True if the player is initialized
+	 * false otherwise
+	 * @return
+	 */
+	public boolean isInitialized() {
+		return isInitialized;
+	}
+	
+	/**
+	 * Set the player initialized of the game 
+	 * @param initialized
+	 */
+	public void setIsInitialized(boolean initialized) {
+		isInitialized = initialized;
+	}
+	
+	
+}

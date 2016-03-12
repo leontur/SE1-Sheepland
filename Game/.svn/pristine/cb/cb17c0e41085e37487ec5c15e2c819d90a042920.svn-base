@@ -1,0 +1,26 @@
+package game.client.rmi.interfaces;
+
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+import java.rmi.registry.Registry;
+
+public interface ClientConsoleInterface extends Remote {
+	
+	int getAssignedToPlayer() throws RemoteException;
+	
+	void setAssignedToPlayer(int i) throws RemoteException;
+
+	void showOnClient(String message) throws RemoteException;
+	
+	int readFromClient() throws RemoteException;
+	
+	String readFromClientStr() throws RemoteException;
+	
+	void exceptionClientLogger(String str, Exception e) throws RemoteException;
+	
+	void showAllObjectsOnRegistry(Registry registry) throws RemoteException;
+	
+	void clearConsole() throws RemoteException;
+	
+	void showGameWindow() throws RemoteException;
+}
