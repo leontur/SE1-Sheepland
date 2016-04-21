@@ -1,7 +1,7 @@
 # Sheepland
 Politecnico di Milano - Software Engineering 1 Project - Java game development
 
-### What is ###
+### What is it ###
 
 * Sheepland is a digital version of a table game
 * Sheepland is a multiplatform game since it's fully developed in Java
@@ -10,7 +10,7 @@ Politecnico di Milano - Software Engineering 1 Project - Java game development
 ### How to play ###
 
 * Download the source code
-* Start the server > Start clients (at least 2)
+* Start the server > Start clients (at least 2, using different workspaces)
 * Instructions on how to play (in Italian) can be found in the folder along with the guidelines for the project that we were given. 
 
 ### Authors ###
